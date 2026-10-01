@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from app.schemas.todo import Todo, TodoCreate
+from app.schemas.todo import Todo, TodoCreate, TodoUpdate
 
 
 class TodoRepository(ABC):
@@ -13,3 +13,11 @@ class TodoRepository(ABC):
     @abstractmethod
     def add(self, data: TodoCreate) -> Todo:
         """Persist a new todo and return it with its assigned id."""
+
+    @abstractmethod
+    def update(self, todo_id: int, data: TodoUpdate) -> Todo:
+        """Apply a partial update and return the updated todo.
+
+        Raises:
+            TodoNotFoundError: if no todo has the given id.
+        """

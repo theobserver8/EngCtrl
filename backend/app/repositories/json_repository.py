@@ -7,9 +7,9 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from app.core.exceptions import StorageError
+from app.core.exceptions import StorageError, TodoNotFoundError
 from app.repositories.base import TodoRepository
-from app.schemas.todo import Todo, TodoCreate
+from app.schemas.todo import Todo, TodoCreate, TodoUpdate
 
 
 class JsonTodoRepository(TodoRepository):
@@ -35,6 +35,22 @@ class JsonTodoRepository(TodoRepository):
             todos.append(todo)
             self._save(todos)
             return todo
+
+    def update(self, todo_id: int, data: TodoUpdate) -> Todo:
+        with self._lock:
+            todos = self._load()
+            index = self._index_of(todos, todo_id)
+            updated = todos[index].model_copy(update=data.changes())
+            todos[index] = updated
+            self._save(todos)
+            return updated
+
+    @staticmethod
+    def _index_of(todos: list[Todo], todo_id: int) -> int:
+        for index, todo in enumerate(todos):
+            if todo.id == todo_id:
+                return index
+        raise TodoNotFoundError(todo_id)
 
     @staticmethod
     def _next_id(todos: list[Todo]) -> int:
