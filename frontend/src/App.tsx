@@ -5,9 +5,12 @@ import TodoList from "./components/todo/TodoList";
 import Button from "./components/ui/Button";
 import { AlertIcon, RefreshIcon } from "./components/ui/icons";
 import { useTodos } from "./hooks/useTodos";
+import { useI18n } from "./i18n/useI18n";
+import { getErrorMessage } from "./utils/errorMessage";
 import { formatCount } from "./utils/format";
 
 function App() {
+  const { t } = useI18n();
   const { todos, status, error, pendingIds, isCreating, refresh, addTodo, toggleTodo } =
     useTodos();
   const completedCount = todos.filter((todo) => todo.completed).length;
@@ -29,7 +32,7 @@ function App() {
               disabled={isLoading}
               icon={<RefreshIcon className={isLoading ? "motion-safe:animate-spin" : ""} />}
             >
-              Load tasks
+              {t.actions.load}
             </Button>
           </div>
 
@@ -39,27 +42,27 @@ function App() {
               className="mt-6 flex items-start gap-3 rounded-control border border-danger/25 bg-danger-soft px-4 py-3 text-sm text-danger"
             >
               <AlertIcon className="mt-0.5 size-4 shrink-0" />
-              <span>{error.message}</span>
+              <span>{getErrorMessage(error, t.errors)}</span>
             </div>
           )}
 
           <section aria-labelledby="tasks-heading" className="mt-10">
             <h2 id="tasks-heading" className="label-mono border-b border-line pb-2.5">
-              Tasks · {formatCount(todos.length)}
+              {t.tasks.heading} · {formatCount(todos.length)}
             </h2>
             {todos.length > 0 ? (
               <TodoList todos={todos} pendingIds={pendingIds} onToggle={toggleTodo} />
             ) : (
               <p className="py-8 text-center text-sm text-ink-faint">
-                {status === "idle" ? "Load the register to see your tasks." : "No tasks yet."}
+                {status === "idle" ? t.tasks.emptyIdle : t.tasks.empty}
               </p>
             )}
           </section>
         </Sheet>
 
         <footer className="mt-6 flex items-center justify-between px-1 font-mono text-[10px] tracking-[0.14em] text-ink-faint uppercase">
-          <span>CEMOSA · Ingeniería y Control</span>
-          <span>Rev. 01</span>
+          <span>{t.footer.project}</span>
+          <span>{t.footer.revision}</span>
         </footer>
       </main>
     </div>
