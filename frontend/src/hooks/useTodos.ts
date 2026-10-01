@@ -112,13 +112,16 @@ export function useTodos(): UseTodosResult {
 
   const toggleTodo = useCallback(
     async (todo: Todo) => {
+      const setCompleted = (completed: boolean) =>
+        setTodos((prev) => prev.map((t) => (t.id === todo.id ? { ...t, completed } : t)));
+
+      // Optimistic update so the checkbox reacts instantly. On failure it is rolled back
+      // explicitly: the reload that follows may fail too (e.g. the server is down).
+      setCompleted(!todo.completed);
       markPending(todo.id, true);
       try {
-        await runAction(async () => {
-          const updated = await todosApi.update(todo.id, { completed: !todo.completed });
-          // Immediate feedback; the reload that follows reconciles with the server.
-          setTodos((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
-        });
+        const saved = await runAction(() => todosApi.update(todo.id, { completed: !todo.completed }));
+        if (!saved) setCompleted(todo.completed);
       } finally {
         markPending(todo.id, false);
       }
