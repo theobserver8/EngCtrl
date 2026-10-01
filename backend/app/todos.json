@@ -1,30 +1,37 @@
 [
   {
     "title": "Learn React",
-    "completed": true
+    "completed": true,
+    "id": 1
   },
   {
     "title": "Learn TypeScript",
-    "completed": true
+    "completed": true,
+    "id": 2
   },
   {
     "title": "Learn Vite",
-    "completed": false
+    "completed": false,
+    "id": 3
   },
   {
     "title": "Learn FastAPI",
-    "completed": false
+    "completed": false,
+    "id": 4
   },
   {
     "title": "Learn Docker",
-    "completed": false
+    "completed": false,
+    "id": 5
   },
   {
     "title": "Learn PostgreSQL",
-    "completed": false
+    "completed": false,
+    "id": 6
   },
   {
     "title": "Learn Tailwind CSS",
-    "completed": false
+    "completed": false,
+    "id": 7
   }
 ]
