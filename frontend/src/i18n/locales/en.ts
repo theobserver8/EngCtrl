@@ -23,16 +23,18 @@ export const en = {
     submit: "Add",
   },
   actions: {
-    load: "Load tasks",
+    retry: "Retry",
+    dismiss: "Dismiss message",
   },
   tasks: {
     heading: "Tasks",
-    emptyIdle: "Load the register to see your tasks.",
-    empty: "No tasks yet.",
+    loading: "Loading tasks…",
+    syncing: "Syncing",
+    empty: "No tasks yet. Add the first one above.",
   },
   errors: {
     network: "Could not reach the server. Check that the API is running.",
-    notFound: "This task no longer exists. Reload the list.",
+    notFound: "This task no longer exists. The list has been updated.",
     validation: "The data sent is not valid.",
     server: "The server could not complete the request.",
     generic: "Something went wrong. Please try again.",

@@ -2,8 +2,8 @@ import AppHeader from "./components/layout/AppHeader";
 import Sheet from "./components/layout/Sheet";
 import TodoForm from "./components/todo/TodoForm";
 import TodoList from "./components/todo/TodoList";
-import Button from "./components/ui/Button";
-import { AlertIcon, RefreshIcon } from "./components/ui/icons";
+import TodoListSkeleton from "./components/todo/TodoListSkeleton";
+import ErrorBanner from "./components/ui/ErrorBanner";
 import { useTodos } from "./hooks/useTodos";
 import { useI18n } from "./i18n/useI18n";
 import { getErrorMessage } from "./utils/errorMessage";
@@ -11,10 +11,20 @@ import { formatCount } from "./utils/format";
 
 function App() {
   const { t } = useI18n();
-  const { todos, status, error, pendingIds, isCreating, refresh, addTodo, toggleTodo } =
-    useTodos();
+  const {
+    todos,
+    status,
+    isRefreshing,
+    error,
+    pendingIds,
+    isCreating,
+    refresh,
+    addTodo,
+    toggleTodo,
+    clearError,
+  } = useTodos();
   const completedCount = todos.filter((todo) => todo.completed).length;
-  const isLoading = status === "loading";
+  const loadFailed = status === "error";
 
   return (
     <div className="relative min-h-dvh overflow-x-clip">
@@ -24,39 +34,45 @@ function App() {
         <Sheet>
           <AppHeader total={todos.length} completed={completedCount} />
 
-          <div className="mt-10 flex flex-wrap items-end gap-3">
+          <div className="mt-10">
             <TodoForm onSubmit={addTodo} isSubmitting={isCreating} />
-            <Button
-              variant="secondary"
-              onClick={refresh}
-              disabled={isLoading}
-              icon={<RefreshIcon className={isLoading ? "motion-safe:animate-spin" : ""} />}
-            >
-              {t.actions.load}
-            </Button>
           </div>
 
           {error && (
-            <div
-              role="alert"
-              className="mt-6 flex items-start gap-3 rounded-control border border-danger/25 bg-danger-soft px-4 py-3 text-sm text-danger"
-            >
-              <AlertIcon className="mt-0.5 size-4 shrink-0" />
-              <span>{getErrorMessage(error, t.errors)}</span>
+            <div className="mt-6">
+              <ErrorBanner
+                message={getErrorMessage(error, t.errors)}
+                onRetry={loadFailed ? refresh : undefined}
+                retryLabel={t.actions.retry}
+                onDismiss={loadFailed ? undefined : clearError}
+                dismissLabel={t.actions.dismiss}
+              />
             </div>
           )}
 
-          <section aria-labelledby="tasks-heading" className="mt-10">
-            <h2 id="tasks-heading" className="label-mono border-b border-line pb-2.5">
-              {t.tasks.heading} · {formatCount(todos.length)}
-            </h2>
-            {todos.length > 0 ? (
-              <TodoList todos={todos} pendingIds={pendingIds} onToggle={toggleTodo} />
-            ) : (
-              <p className="py-8 text-center text-sm text-ink-faint">
-                {status === "idle" ? t.tasks.emptyIdle : t.tasks.empty}
-              </p>
-            )}
+          <section aria-labelledby="tasks-heading" aria-busy={isRefreshing} className="mt-10">
+            <div className="flex items-center justify-between gap-4 border-b border-line pb-2.5">
+              <h2 id="tasks-heading" className="label-mono">
+                {t.tasks.heading} · {formatCount(todos.length)}
+              </h2>
+              {isRefreshing && (
+                <span
+                  aria-hidden="true"
+                  className="flex items-center gap-1.5 font-mono text-[10px] tracking-[0.14em] text-ink-faint uppercase"
+                >
+                  <span className="size-1.5 rounded-full bg-brand motion-safe:animate-pulse" />
+                  {t.tasks.syncing}
+                </span>
+              )}
+            </div>
+
+            {status === "loading" && <TodoListSkeleton label={t.tasks.loading} />}
+            {status === "success" &&
+              (todos.length > 0 ? (
+                <TodoList todos={todos} pendingIds={pendingIds} onToggle={toggleTodo} />
+              ) : (
+                <p className="py-8 text-center text-sm text-ink-faint">{t.tasks.empty}</p>
+              ))}
           </section>
         </Sheet>
 

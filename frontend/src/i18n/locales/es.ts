@@ -25,16 +25,18 @@ export const es: Messages = {
     submit: "Añadir",
   },
   actions: {
-    load: "Cargar tareas",
+    retry: "Reintentar",
+    dismiss: "Cerrar aviso",
   },
   tasks: {
     heading: "Tareas",
-    emptyIdle: "Carga el registro para ver tus tareas.",
-    empty: "Todavía no hay tareas.",
+    loading: "Cargando tareas…",
+    syncing: "Sincronizando",
+    empty: "Todavía no hay tareas. Añade la primera arriba.",
   },
   errors: {
     network: "No se ha podido conectar con el servidor. Comprueba que la API está en marcha.",
-    notFound: "Esta tarea ya no existe. Recarga la lista.",
+    notFound: "Esta tarea ya no existe. La lista se ha actualizado.",
     validation: "Los datos enviados no son válidos.",
     server: "El servidor no ha podido completar la petición.",
     generic: "Algo ha fallado. Inténtalo de nuevo.",

@@ -38,11 +38,10 @@ export function CheckIcon(props: IconProps) {
   );
 }
 
-export function RefreshIcon(props: IconProps) {
+export function CloseIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <path d="M13 8a5 5 0 1 1-1.46-3.54" />
-      <path d="M13 3v2.5h-2.5" />
+      <path d="M4.5 4.5l7 7M11.5 4.5l-7 7" />
     </Icon>
   );
 }
