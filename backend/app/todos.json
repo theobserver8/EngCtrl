@@ -1,0 +1,30 @@
+[
+  {
+    "title": "Learn React",
+    "completed": true
+  },
+  {
+    "title": "Learn TypeScript",
+    "completed": true
+  },
+  {
+    "title": "Learn Vite",
+    "completed": false
+  },
+  {
+    "title": "Learn FastAPI",
+    "completed": false
+  },
+  {
+    "title": "Learn Docker",
+    "completed": false
+  },
+  {
+    "title": "Learn PostgreSQL",
+    "completed": false
+  },
+  {
+    "title": "Learn Tailwind CSS",
+    "completed": false
+  }
+]
