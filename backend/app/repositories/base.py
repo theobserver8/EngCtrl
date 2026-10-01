@@ -21,3 +21,11 @@ class TodoRepository(ABC):
         Raises:
             TodoNotFoundError: if no todo has the given id.
         """
+
+    @abstractmethod
+    def delete(self, todo_id: int) -> None:
+        """Remove a todo. Ids of deleted todos are never reused.
+
+        Raises:
+            TodoNotFoundError: if no todo has the given id.
+        """

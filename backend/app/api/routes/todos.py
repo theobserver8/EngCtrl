@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Path, status
+from fastapi import APIRouter, Path, Response, status
 
 from app.api.dependencies import TodoRepositoryDep
 from app.schemas.todo import Todo, TodoCreate, TodoUpdate
@@ -28,3 +28,15 @@ def create_todo(payload: TodoCreate, repository: TodoRepositoryDep) -> Todo:
 def update_todo(todo_id: TodoId, payload: TodoUpdate, repository: TodoRepositoryDep) -> Todo:
     """Partially update a todo (e.g. mark it as completed)."""
     return repository.update(todo_id, payload)
+
+
+@router.delete(
+    "/{todo_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response,
+    responses=NOT_FOUND_RESPONSE,
+)
+def delete_todo(todo_id: TodoId, repository: TodoRepositoryDep) -> Response:
+    """Delete a todo."""
+    repository.delete(todo_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
