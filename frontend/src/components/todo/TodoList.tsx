@@ -1,24 +1,25 @@
-import React from "react";
-import type { Todo } from "../types/todo";
+import type { Todo } from "../../types/todo";
 import TodoItem from "./TodoItem";
 
 interface TodoListProps {
   todos: Todo[];
-  toggleTodo: (id: number) => void;
+  pendingIds: ReadonlySet<number>;
+  onToggle: (todo: Todo) => void;
 }
 
-const TodoList: React.FC<TodoListProps> = ({ todos, toggleTodo }) => {
+function TodoList({ todos, pendingIds, onToggle }: TodoListProps) {
   return (
     <ul className="space-y-2">
       {todos.map((todo) => (
         <TodoItem
           key={todo.id}
           todo={todo}
-          toggleTodo={toggleTodo}
+          isPending={pendingIds.has(todo.id)}
+          onToggle={onToggle}
         />
       ))}
     </ul>
   );
-};
+}
 
 export default TodoList;
