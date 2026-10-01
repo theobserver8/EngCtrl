@@ -9,7 +9,7 @@ interface TodoListProps {
 
 function TodoList({ todos, pendingIds, onToggle }: TodoListProps) {
   return (
-    <ul className="space-y-2">
+    <ul className="divide-y divide-line">
       {todos.map((todo) => (
         <TodoItem
           key={todo.id}
