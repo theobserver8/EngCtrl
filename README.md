@@ -1,3 +1,5 @@
+<p align="right"><b>English</b> · <a href="README.es.md">Español</a></p>
+
 # Task register — CEMOSA technical test
 
 A todo application built with **FastAPI** and **React + TypeScript (Vite)**, designed as a
@@ -19,7 +21,7 @@ control. It covers every task in [`INSTRUCTIONS.md`](INSTRUCTIONS.md), with a bi
 | 2. Delete tasks | `DELETE /todos/{id}`; trash button with an inline two-step confirmation that is safe against accidental double clicks |
 | 3. Auto-load tasks | The list loads on page open and reloads after every add, delete, completion or favourite change |
 | 4. Descriptions and favourites | Optional description (up to 500 characters) and a star toggle; favourites are shown in their own section, without duplicates |
-| 5. README | This file |
+| 5. README | This file, in English and [Spanish](README.es.md) |
 
 Beyond the brief:
 
