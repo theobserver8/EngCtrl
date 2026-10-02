@@ -8,9 +8,9 @@ control. It covers every task in [`INSTRUCTIONS.md`](INSTRUCTIONS.md), with a bi
 (Spanish / English) and automated tests on both sides.
 
 <p align="center">
-  <img src="docs/screenshots/desktop-es.png" alt="Desktop view in Spanish: title block with progress ring, favourites section and task list" width="68%">
+  <img src="docs/screenshots/desktop-es.png" alt="Desktop view in Spanish: title block with progress ring and the Tasks tab, with favourites starred in the list" width="68%">
   &nbsp;
-  <img src="docs/screenshots/mobile-en.png" alt="Mobile view in English" width="24%">
+  <img src="docs/screenshots/mobile-en.png" alt="Mobile view in English with the Favourites tab selected" width="24%">
 </p>
 
 ## Features

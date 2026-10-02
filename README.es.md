@@ -8,9 +8,9 @@ control de calidad. Cubre todas las tareas de [`INSTRUCTIONS.md`](INSTRUCTIONS.m
 bilingüe (español / inglés) y tests automáticos en ambas partes.
 
 <p align="center">
-  <img src="docs/screenshots/desktop-es.png" alt="Vista de escritorio en español: cajetín con anillo de progreso, sección de favoritas y lista de tareas" width="68%">
+  <img src="docs/screenshots/desktop-es.png" alt="Vista de escritorio en español: cajetín con anillo de progreso y pestaña Tareas, con las favoritas marcadas con la estrella" width="68%">
   &nbsp;
-  <img src="docs/screenshots/mobile-en.png" alt="Vista móvil en inglés" width="24%">
+  <img src="docs/screenshots/mobile-en.png" alt="Vista móvil en inglés con la pestaña Favoritas seleccionada" width="24%">
 </p>
 
 ## Funcionalidades
