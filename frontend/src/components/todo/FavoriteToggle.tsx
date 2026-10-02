@@ -26,7 +26,7 @@ function FavoriteToggle({ title, favorite, onToggle }: FavoriteToggleProps) {
       }`}
     >
       <StarIcon
-        className={`size-4 transition-[fill,transform] duration-(--motion-base) ${favorite ? "scale-110 fill-lime" : "fill-transparent"}`}
+        className={`size-4 transition-[fill,scale] duration-(--motion-base) ${favorite ? "scale-110 fill-lime" : "fill-transparent"}`}
       />
     </button>
   );
