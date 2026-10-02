@@ -50,7 +50,8 @@
     --motion-base: 320ms; /* elements entering or leaving */
     --motion-slow: 450ms; /* layout changes: rows opening/closing, sliding indicators */
     --motion-view: 550ms; /* switching between views: crossfade + frame resize */
-    --motion-signal: 1400ms; /* attention signals that fade out slowly (tab activity) */
+    --motion-gentle: 650ms; /* unhurried feedback: tab hover, counters rolling */
+    --motion-signal: 2400ms; /* attention signals that fade out slowly (tab activity) */
   }
 
   html {

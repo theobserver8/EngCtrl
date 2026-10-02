@@ -219,7 +219,7 @@ function TabButton<T extends string>({ tab, id, panelId, isSelected, onSelect, b
       tabIndex={isSelected ? 0 : -1}
       onClick={() => onSelect(tab.id)}
       // -mb-px: the selected tab covers the frame's top border, opening the folder into its panel.
-      className={`group focus-ring relative -mb-px flex h-10 cursor-pointer items-center rounded-t-control border border-b-0 px-3 font-mono text-[11px] font-medium tracking-[0.14em] whitespace-nowrap uppercase tabular-nums transition-colors duration-(--motion-base) sm:px-4 ${
+      className={`group focus-ring relative -mb-px flex h-10 cursor-pointer items-center rounded-t-control border border-b-0 px-3 font-mono text-[11px] font-medium tracking-[0.14em] whitespace-nowrap uppercase tabular-nums transition-colors duration-(--motion-gentle) ease-in-out-soft sm:px-4 ${
         isSelected ? "z-10 border-line bg-sheet text-ink" : "border-transparent text-ink-faint hover:bg-brand-soft/60 hover:text-ink"
       }`}
     >
@@ -229,16 +229,18 @@ function TabButton<T extends string>({ tab, id, panelId, isSelected, onSelect, b
           aria-hidden="true"
           className={`pointer-events-none absolute inset-0 rounded-t-control ${
             change.direction === "up"
-              ? "animate-[signal-add_var(--motion-signal)_var(--ease-out-soft)]"
-              : "animate-[signal-remove_var(--motion-signal)_var(--ease-out-soft)]"
+              ? "animate-[signal-add_var(--motion-signal)_var(--ease-in-out-soft)]"
+              : "animate-[signal-remove_var(--motion-signal)_var(--ease-in-out-soft)]"
           }`}
         />
       )}
       <span
         aria-hidden="true"
         // On hover over an unselected tab it shows faintly and half-grown: a preview of the selection.
-        className={`absolute inset-x-3 -top-px h-0.5 rounded-full bg-brand transition-[transform,opacity] duration-(--motion-base) ease-out-soft ${
-          isSelected ? "scale-x-100" : "scale-x-0 opacity-40 group-hover:scale-x-50"
+        // It fades as it grows (and shrinks): a saturated line is noticed long before the pale
+        // background, so this keeps both in step. Tailwind's scale-* sets `scale`, not `transform`.
+        className={`absolute inset-x-3 -top-px h-0.5 rounded-full bg-brand transition-[scale,opacity] duration-(--motion-gentle) ease-in-out-soft ${
+          isSelected ? "scale-x-100" : "scale-x-0 opacity-0 group-hover:scale-x-50 group-hover:opacity-40"
         }`}
       />
       <span className="relative flex items-center gap-2">
@@ -260,8 +262,8 @@ function TabButton<T extends string>({ tab, id, panelId, isSelected, onSelect, b
                 change === null
                   ? undefined
                   : change.direction === "up"
-                    ? "motion-safe:animate-[count-up_var(--motion-base)_var(--ease-out-soft)]"
-                    : "motion-safe:animate-[count-down_var(--motion-base)_var(--ease-out-soft)]"
+                    ? "motion-safe:animate-[count-up_var(--motion-gentle)_var(--ease-in-out-soft)]"
+                    : "motion-safe:animate-[count-down_var(--motion-gentle)_var(--ease-in-out-soft)]"
               }
             >
               {formatCount(count)}
