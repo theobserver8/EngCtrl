@@ -39,6 +39,9 @@ export function useTodos(): UseTodosResult {
   // Only the latest list request may update the state; older ones are aborted.
   const listRequest = useRef<AbortController | null>(null);
   const hasLoaded = useRef(false);
+  // Mutations still waiting for the server. While any is in flight, a list snapshot may not
+  // include it yet, so applying it would undo that change on screen.
+  const actionsInFlight = useRef(0);
 
   const refresh = useCallback(async () => {
     listRequest.current?.abort();
@@ -50,6 +53,8 @@ export function useTodos(): UseTodosResult {
 
     try {
       const data = await todosApi.list(controller.signal);
+      // Stale if an action started meanwhile; the last action to finish reloads again.
+      if (actionsInFlight.current > 0) return;
       hasLoaded.current = true;
       setTodos(data);
       setStatus("success");
@@ -71,14 +76,16 @@ export function useTodos(): UseTodosResult {
   }, [refresh]);
 
   /**
-   * Runs a mutation and always reloads the list afterwards (also on failure, to resync
-   * with the server, e.g. when the todo was removed elsewhere).
+   * Runs a mutation and reloads the list afterwards (also on failure, to resync with the
+   * server, e.g. when the todo was removed elsewhere). When actions overlap, only the last
+   * one to finish reloads, so no snapshot taken before a pending change undoes it on screen.
    */
   const runAction = useCallback(
     async (action: () => Promise<unknown>): Promise<boolean> => {
       // A list request started before this mutation would bring stale data and could undo
       // the optimistic update on screen (e.g. a deleted row reappearing for a moment).
       listRequest.current?.abort();
+      actionsInFlight.current += 1;
       try {
         await action();
         setActionError(null);
@@ -87,7 +94,8 @@ export function useTodos(): UseTodosResult {
         setActionError(toApiError(err));
         return false;
       } finally {
-        void refresh();
+        actionsInFlight.current -= 1;
+        if (actionsInFlight.current === 0) void refresh();
       }
     },
     [refresh],

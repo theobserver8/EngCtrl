@@ -30,7 +30,7 @@ Beyond the brief:
   original data file, and ids that are never reused after a delete.
 - **Accessibility**: semantic HTML, keyboard support, visible focus, screen reader announcements,
   WCAG AA contrast and support for the *reduced motion* setting.
-- **Tests**: 51 backend tests (pytest) and 45 frontend tests (Vitest + Testing Library).
+- **Tests**: 55 backend tests (pytest) and 48 frontend tests (Vitest + Testing Library).
 
 ## Getting started
 

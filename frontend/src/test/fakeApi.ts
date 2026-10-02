@@ -28,6 +28,7 @@ export function createFakeApi(seed: Todo[] = SEED_TODOS) {
   let nextId = Math.max(0, ...todos.map((todo) => todo.id)) + 1;
   const calls: RecordedCall[] = [];
   const state = { offline: false };
+  const holds: { method: string; path: string; until: Promise<void> }[] = [];
 
   const handler = async (input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> => {
     if (init.signal?.aborted) throw new DOMException("Aborted", "AbortError");
@@ -37,6 +38,12 @@ export function createFakeApi(seed: Todo[] = SEED_TODOS) {
     calls.push({ method, path: url.pathname, body });
 
     if (state.offline) throw new TypeError("Failed to fetch");
+
+    const hold = holds.find((entry) => entry.method === method && entry.path === url.pathname);
+    if (hold) {
+      holds.splice(holds.indexOf(hold), 1);
+      await hold.until; // a slow server: the change is applied only when released
+    }
 
     const match = url.pathname.match(/^\/todos(?:\/(\d+))?$/);
     if (!match) return json(404, { detail: "Not Found" });
@@ -72,6 +79,12 @@ export function createFakeApi(seed: Todo[] = SEED_TODOS) {
     /** Current server-side data. */
     get todos() {
       return todos;
+    },
+    /** Holds the next matching request until the returned function is called. */
+    hold(method: string, path: string): () => void {
+      let release!: () => void;
+      holds.push({ method, path, until: new Promise<void>((resolve) => (release = resolve)) });
+      return release;
     },
     /** Simulates a change made by someone else (e.g. another tab). */
     removeOnServer(id: number) {

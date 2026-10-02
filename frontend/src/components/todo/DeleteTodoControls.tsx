@@ -40,10 +40,12 @@ function DeleteTodoControls({
   useEffect(() => {
     if (!armed) return;
     confirmRef.current?.focus();
-    const timeout = window.setTimeout(
-      () => setArmed(false),
-      CONFIRM_TIMEOUT_MS,
-    );
+    const timeout = window.setTimeout(() => {
+      // The confirm button becomes inert when disarmed, which drops its focus: hand it back
+      // to the trash button first so keyboard users keep their place in the list.
+      if (document.activeElement === confirmRef.current) trashRef.current?.focus();
+      setArmed(false);
+    }, CONFIRM_TIMEOUT_MS);
     return () => window.clearTimeout(timeout);
   }, [armed]);
 

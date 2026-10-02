@@ -1,5 +1,5 @@
-import { screen, waitFor, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { act, screen, waitFor, within } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 import { getRow, renderApp, sectionTitles } from "./test/renderApp";
 
 const GUARD_MS = 450; // the delete confirmation ignores activations for 400 ms
@@ -95,6 +95,46 @@ describe("completing tasks (task 1)", () => {
   });
 });
 
+describe("overlapping actions", () => {
+  it("does not undo a pending change when another action finishes first", async () => {
+    const { api, user } = await renderApp();
+    const releaseSlowSave = api.hold("PATCH", "/todos/3");
+
+    await user.click(screen.getByRole("checkbox", { name: "Check rebar" })); // slow save
+    await user.click(screen.getByRole("checkbox", { name: "Inspect formwork" })); // fast save
+    await waitFor(() => expect(api.todos.find((todo) => todo.id === 1)?.completed).toBe(true));
+    await wait(100);
+
+    // The slow change must still be on screen: no reload may bring the old server state.
+    expect(screen.getByRole("checkbox", { name: "Check rebar" })).toBeChecked();
+
+    releaseSlowSave();
+    await waitFor(() => expect(api.todos.find((todo) => todo.id === 3)?.completed).toBe(true));
+    await waitFor(() => expect(api.calls.at(-1)?.method).toBe("GET"));
+    expect(screen.getByRole("checkbox", { name: "Check rebar" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Inspect formwork" })).toBeChecked();
+  });
+
+  it("does not bring back a row whose deletion is still in progress", async () => {
+    const { api, user } = await renderApp();
+    const releaseSlowDelete = api.hold("DELETE", "/todos/1");
+
+    await user.click(screen.getByRole("button", { name: "Delete task: Inspect formwork" }));
+    await wait(GUARD_MS);
+    await user.click(screen.getByRole("button", { name: "Confirm deletion of task: Inspect formwork" }));
+    await user.click(screen.getByRole("checkbox", { name: "Concrete test" }));
+    await waitFor(() => expect(api.todos.find((todo) => todo.id === 2)?.completed).toBe(false));
+    await wait(100);
+
+    expect(screen.queryByText("Inspect formwork")).not.toBeInTheDocument();
+
+    releaseSlowDelete();
+    await waitFor(() => expect(api.todos.map((todo) => todo.id)).toEqual([2, 3]));
+    await waitFor(() => expect(api.calls.at(-1)?.method).toBe("GET"));
+    expect(screen.queryByText("Inspect formwork")).not.toBeInTheDocument();
+  });
+});
+
 describe("favourites (task 4)", () => {
   it("moves a task to the favourites section and back", async () => {
     const { api, user } = await renderApp();
@@ -161,6 +201,25 @@ describe("deleting tasks (task 2)", () => {
 
     expect(trash).toHaveAttribute("aria-pressed", "false");
     expect(trash).toHaveFocus();
+  });
+
+  it("returns keyboard focus to the trash button when the confirmation times out", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      const { user } = await renderApp();
+      const trash = screen.getByRole("button", { name: "Delete task: Inspect formwork" });
+
+      trash.focus();
+      await user.keyboard("{Enter}");
+      expect(screen.getByRole("button", { name: "Confirm deletion of task: Inspect formwork" })).toHaveFocus();
+
+      act(() => vi.advanceTimersByTime(4100));
+
+      expect(trash).toHaveAttribute("aria-pressed", "false");
+      expect(trash).toHaveFocus();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("treats a task already deleted elsewhere as deleted, without an error", async () => {

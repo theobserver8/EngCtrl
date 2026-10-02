@@ -31,7 +31,7 @@ Además de lo que pide el enunciado:
   un borrado.
 - **Accesibilidad**: HTML semántico, uso completo con teclado, foco visible, avisos para lectores
   de pantalla, contraste WCAG AA y respeto a la preferencia de *reducir movimiento*.
-- **Tests**: 51 tests de backend (pytest) y 45 de frontend (Vitest + Testing Library).
+- **Tests**: 55 tests de backend (pytest) y 48 de frontend (Vitest + Testing Library).
 
 ## Puesta en marcha
 

@@ -67,6 +67,17 @@ class TestMigrations:
 
         assert JsonTodoRepository(path).add(TodoCreate(title="B")).id == 6
 
+    @pytest.mark.parametrize("stored_id", ["7", 7.0], ids=["string", "float"])
+    def test_hand_edited_ids_count_for_the_counter(self, write_data, stored_id) -> None:
+        # Pydantic coerces "7" and 7.0 to 7: the counter must not hand out 7 again.
+        path = write_data({"next_id": 1, "todos": [{"title": "A", "id": stored_id}]})
+        repository = JsonTodoRepository(path)
+
+        new_ids = [repository.add(TodoCreate(title=f"T{i}")).id for i in range(7)]
+
+        assert new_ids == [8, 9, 10, 11, 12, 13, 14]
+        assert read_file(path)["todos"][0]["id"] == 7
+
     def test_current_format_is_not_rewritten(self, data_file: Path) -> None:
         JsonTodoRepository(data_file).list_all()
         before = data_file.read_text(encoding="utf-8")
@@ -85,6 +96,18 @@ class TestStorageErrors:
     def test_invalid_files_raise_storage_error(self, write_data, content) -> None:
         with pytest.raises(StorageError):
             JsonTodoRepository(write_data(content)).list_all()
+
+    @pytest.mark.parametrize(
+        "records",
+        [
+            [{"title": "A", "id": 3}, {"title": "B", "id": 3}],
+            [{"title": "A", "id": 3}, {"title": "B", "id": "3"}],
+        ],
+        ids=["same-int", "int-and-string"],
+    )
+    def test_duplicate_ids_raise_storage_error(self, write_data, records) -> None:
+        with pytest.raises(StorageError, match="Duplicate todo id 3"):
+            JsonTodoRepository(write_data({"next_id": 4, "todos": records})).list_all()
 
 
 class TestConcurrency:

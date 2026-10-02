@@ -95,30 +95,40 @@ class JsonTodoRepository(TodoRepository):
         if not all(isinstance(item, dict) for item in records):
             raise StorageError(f"Unexpected data format in {self._path.name}")
 
+        # Validate the records that already have an id first: Pydantic coerces hand-edited
+        # values such as "7" or 7.0, and the counter must be computed from the real ids.
+        validated = [self._validate(item) if "id" in item else None for item in records]
+        known_ids = [todo.id for todo in validated if todo is not None]
+        duplicates = sorted({todo_id for todo_id in known_ids if known_ids.count(todo_id) > 1})
+        if duplicates:
+            raise StorageError(f"Duplicate todo id {duplicates[0]} in {self._path.name}")
+
         # The counter can never be lower than the highest existing id (e.g. if edited by
         # hand); a missing or inconsistent counter is repaired and saved.
-        highest_id = max((item["id"] for item in records if isinstance(item.get("id"), int)), default=0)
-        next_id = highest_id + 1
+        next_id = max(known_ids, default=0) + 1
         if isinstance(stored_next_id, int) and stored_next_id > next_id:
             next_id = stored_next_id
         elif stored_next_id != next_id:
             migrated = True
 
         todos: list[Todo] = []
-        for item in records:
-            if "id" not in item:
+        for item, todo in zip(records, validated):
+            if todo is None:  # Legacy record without id: give it the next free one.
                 item = {**item, "id": next_id}
+                todo = self._validate(item)
                 next_id += 1
                 migrated = True
-            try:
-                todo = Todo.model_validate(item)
-            except ValidationError as exc:
-                raise StorageError(f"Invalid todo record in {self._path.name}") from exc
             # Records written by older versions (e.g. without description/favorite) or edited
             # by hand are rewritten in their normalized form.
             migrated = migrated or item != todo.model_dump()
             todos.append(todo)
         return _Store(todos=todos, next_id=next_id), migrated
+
+    def _validate(self, item: dict[str, Any]) -> Todo:
+        try:
+            return Todo.model_validate(item)
+        except ValidationError as exc:
+            raise StorageError(f"Invalid todo record in {self._path.name}") from exc
 
     def _save(self, store: _Store) -> None:
         document = {
