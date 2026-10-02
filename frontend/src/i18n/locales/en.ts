@@ -37,9 +37,9 @@ export const en = {
   },
   tasks: {
     heading: "Tasks",
+    views: "Task views",
     favoritesHeading: "Favourites",
     favoritesEmpty: "Mark a task with the star to keep it at hand.",
-    allFavorites: "All your tasks are in favourites.",
     favorite: (title: string) => `Mark as favourite: ${title}`,
     unfavorite: (title: string) => `Remove from favourites: ${title}`,
     loading: "Loading tasks…",

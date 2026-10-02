@@ -8,9 +8,9 @@ control de calidad. Cubre todas las tareas de [`INSTRUCTIONS.md`](INSTRUCTIONS.m
 bilingüe (español / inglés) y tests automáticos en ambas partes.
 
 <p align="center">
-  <img src="docs/screenshots/desktop-es.png" alt="Vista de escritorio en español: cajetín con anillo de progreso, sección de favoritas y lista de tareas" width="68%">
+  <img src="docs/screenshots/desktop-es.png" alt="Vista de escritorio en español: cajetín con anillo de progreso y pestaña Tareas, con las favoritas marcadas con la estrella" width="68%">
   &nbsp;
-  <img src="docs/screenshots/mobile-en.png" alt="Vista móvil en inglés" width="24%">
+  <img src="docs/screenshots/mobile-en.png" alt="Vista móvil en inglés con la pestaña Favoritas seleccionada" width="24%">
 </p>
 
 ## Funcionalidades
@@ -20,18 +20,18 @@ bilingüe (español / inglés) y tests automáticos en ambas partes.
 | 1. Estado de completado guardado en el backend | `PATCH /todos/{id}`; el checkbox cambia al instante y vuelve atrás si falla el guardado |
 | 2. Borrar tareas | `DELETE /todos/{id}`; botón de papelera con confirmación en dos pasos, a prueba de dobles clics accidentales |
 | 3. Carga automática de tareas | La lista se carga al abrir la página y se recarga tras cada alta, borrado, completado o cambio de favorita |
-| 4. Descripciones y favoritas | Descripción opcional (hasta 500 caracteres) y botón de estrella; las favoritas se muestran en su propia sección, sin duplicados |
+| 4. Descripciones y favoritas | Descripción opcional (hasta 500 caracteres) y botón de estrella; las favoritas tienen su propia pestaña, junto a la lista completa, donde mantienen la estrella encendida |
 | 5. README | Este archivo, en español y en [inglés](README.md) |
 
 Además de lo que pide el enunciado:
 
-- Interfaz en **español / inglés** con selector de idioma por banderas; la elección se recuerda.
+- Interfaz en **inglés / español** con selector de idioma por banderas; arranca en inglés y recuerda la elección.
 - **Almacenamiento robusto**: repositorio JSON seguro ante peticiones simultáneas, con escrituras
   atómicas, migración automática del archivo de datos original e ids que nunca se reutilizan tras
   un borrado.
 - **Accesibilidad**: HTML semántico, uso completo con teclado, foco visible, avisos para lectores
   de pantalla, contraste WCAG AA y respeto a la preferencia de *reducir movimiento*.
-- **Tests**: 55 tests de backend (pytest) y 48 de frontend (Vitest + Testing Library).
+- **Tests**: 55 tests de backend (pytest) y 49 de frontend (Vitest + Testing Library).
 
 ## Puesta en marcha
 
@@ -150,7 +150,7 @@ frontend/
     i18n/                    # Proveedor de idioma, detección y diccionarios ES/EN
     components/
       layout/                # Hoja, cabecera, cajetín, anillo de progreso
-      todo/                  # Formulario, secciones, lista, fila, controles de favorita y borrado
+      todo/                  # Formulario, lista, fila, controles de favorita y borrado
       ui/                    # Botón, checkbox, iconos, banderas, aviso de error, estado vacío
     test/                    # Configuración de tests y API falsa en memoria
     index.css                # Tokens de diseño (Tailwind v4 @theme) y animaciones

@@ -5,11 +5,9 @@ interface FavoriteToggleProps {
   title: string;
   favorite: boolean;
   onToggle: () => void;
-  /** Restores keyboard focus after the row moves to the other section. */
-  autoFocus?: boolean;
 }
 
-function FavoriteToggle({ title, favorite, onToggle, autoFocus = false }: FavoriteToggleProps) {
+function FavoriteToggle({ title, favorite, onToggle }: FavoriteToggleProps) {
   const { t } = useI18n();
   const label = favorite ? t.tasks.unfavorite(title) : t.tasks.favorite(title);
 
@@ -20,8 +18,6 @@ function FavoriteToggle({ title, favorite, onToggle, autoFocus = false }: Favori
       aria-pressed={favorite}
       aria-label={label}
       title={label}
-      // Only true right after the user toggled it: focus follows the row to its new section.
-      autoFocus={autoFocus}
       className={`focus-ring grid size-8 shrink-0 cursor-pointer place-items-center rounded-[6px] transition-[background-color,color,opacity] duration-(--motion-base) hover:bg-lime-soft pointer-coarse:size-10 ${
         favorite
           ? "text-ink"
@@ -30,7 +26,7 @@ function FavoriteToggle({ title, favorite, onToggle, autoFocus = false }: Favori
       }`}
     >
       <StarIcon
-        className={`size-4 transition-[fill,transform] duration-(--motion-base) ${favorite ? "scale-110 fill-lime" : "fill-transparent"}`}
+        className={`size-4 transition-[fill,scale] duration-(--motion-base) ${favorite ? "scale-110 fill-lime" : "fill-transparent"}`}
       />
     </button>
   );

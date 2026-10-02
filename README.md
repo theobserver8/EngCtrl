@@ -8,9 +8,9 @@ control. It covers every task in [`INSTRUCTIONS.md`](INSTRUCTIONS.md), with a bi
 (Spanish / English) and automated tests on both sides.
 
 <p align="center">
-  <img src="docs/screenshots/desktop-es.png" alt="Desktop view in Spanish: title block with progress ring, favourites section and task list" width="68%">
+  <img src="docs/screenshots/desktop-es.png" alt="Desktop view in Spanish: title block with progress ring and the Tasks tab, with favourites starred in the list" width="68%">
   &nbsp;
-  <img src="docs/screenshots/mobile-en.png" alt="Mobile view in English" width="24%">
+  <img src="docs/screenshots/mobile-en.png" alt="Mobile view in English with the Favourites tab selected" width="24%">
 </p>
 
 ## Features
@@ -20,17 +20,17 @@ control. It covers every task in [`INSTRUCTIONS.md`](INSTRUCTIONS.md), with a bi
 | 1. Completion status saved in the backend | `PATCH /todos/{id}`; the checkbox updates instantly and rolls back if saving fails |
 | 2. Delete tasks | `DELETE /todos/{id}`; trash button with an inline two-step confirmation that is safe against accidental double clicks |
 | 3. Auto-load tasks | The list loads on page open and reloads after every add, delete, completion or favourite change |
-| 4. Descriptions and favourites | Optional description (up to 500 characters) and a star toggle; favourites are shown in their own section, without duplicates |
+| 4. Descriptions and favourites | Optional description (up to 500 characters) and a star toggle; favourites have their own tab, next to the full task list, where they keep their lit star |
 | 5. README | This file, in English and [Spanish](README.es.md) |
 
 Beyond the brief:
 
-- **Spanish / English** interface with a flag language switcher; the choice is remembered.
+- **English / Spanish** interface with a flag language switcher; starts in English and remembers the choice.
 - **Robust storage**: thread-safe JSON repository with atomic writes, automatic migration of the
   original data file, and ids that are never reused after a delete.
 - **Accessibility**: semantic HTML, keyboard support, visible focus, screen reader announcements,
   WCAG AA contrast and support for the *reduced motion* setting.
-- **Tests**: 55 backend tests (pytest) and 48 frontend tests (Vitest + Testing Library).
+- **Tests**: 55 backend tests (pytest) and 49 frontend tests (Vitest + Testing Library).
 
 ## Getting started
 
@@ -147,7 +147,7 @@ frontend/
     i18n/                    # Language provider, detection and ES/EN dictionaries
     components/
       layout/                # Sheet, header, title block, progress ring
-      todo/                  # Form, sections, list, row, favourite and delete controls
+      todo/                  # Form, list, row, favourite and delete controls
       ui/                    # Button, Checkbox, icons, flags, error banner, empty state
     test/                    # Test setup and in-memory fake API
     index.css                # Design tokens (Tailwind v4 @theme) and motion

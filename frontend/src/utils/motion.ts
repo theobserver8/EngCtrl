@@ -3,6 +3,7 @@ export const MOTION_MS = {
   fast: 200,
   base: 320,
   slow: 450,
+  view: 550,
 } as const;
 
 export function prefersReducedMotion(): boolean {

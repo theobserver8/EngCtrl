@@ -1,13 +1,13 @@
 import { en, type Messages } from "./locales/en";
 import { es } from "./locales/es";
 
-export const LOCALES = ["es", "en"] as const;
+export const LOCALES = ["en", "es"] as const;
 export type Locale = (typeof LOCALES)[number];
 
 export const DEFAULT_LOCALE: Locale = "en";
 export const LOCALE_STORAGE_KEY = "cemosa.todo.locale";
 
-export const MESSAGES: Record<Locale, Messages> = { es, en };
+export const MESSAGES: Record<Locale, Messages> = { en, es };
 
 interface LocaleInfo {
   /** BCP 47 tag used by Intl formatters. */
@@ -17,25 +17,20 @@ interface LocaleInfo {
 }
 
 export const LOCALE_INFO: Record<Locale, LocaleInfo> = {
-  es: { intl: "es-ES", nativeName: "Español" },
   en: { intl: "en-GB", nativeName: "English" },
+  es: { intl: "es-ES", nativeName: "Español" },
 };
 
 export function isLocale(value: unknown): value is Locale {
   return typeof value === "string" && (LOCALES as readonly string[]).includes(value);
 }
 
-/** Initial locale: saved preference → browser languages → default. */
+/**
+ * Initial locale: saved preference → English. The browser language is deliberately ignored so the
+ * app always starts in English, the project's primary language, until the user picks another one.
+ */
 export function detectLocale(): Locale {
-  const saved = readStoredLocale();
-  if (saved) return saved;
-
-  const browserLanguages = typeof navigator === "undefined" ? [] : navigator.languages;
-  for (const tag of browserLanguages) {
-    const language = tag.toLowerCase().split("-")[0];
-    if (isLocale(language)) return language;
-  }
-  return DEFAULT_LOCALE;
+  return readStoredLocale() ?? DEFAULT_LOCALE;
 }
 
 function readStoredLocale(): Locale | null {

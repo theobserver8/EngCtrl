@@ -28,24 +28,29 @@ function TodoForm({ onSubmit, isSubmitting = false }: TodoFormProps) {
   const titleId = useId();
   const descriptionId = useId();
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
+  const addDescriptionRef = useRef<HTMLButtonElement>(null);
   const canSubmit = title.trim().length > 0 && !isSubmitting;
 
-  // Focus the description only when the user opens it (not on reset or first render).
-  const focusDescriptionNext = useRef(false);
+  // Move the focus only when the user opens or closes the description (not on submit or first
+  // render): into the field when it opens, back to "Add description" when it is removed.
+  const moveFocusNext = useRef(false);
   useEffect(() => {
-    if (showDescription && focusDescriptionNext.current)
-      descriptionRef.current?.focus();
-    focusDescriptionNext.current = false;
+    if (moveFocusNext.current)
+      (showDescription ? descriptionRef : addDescriptionRef).current?.focus();
+    moveFocusNext.current = false;
   }, [showDescription]);
 
   const openDescription = () => {
     // Cleared when opening (not when closing) so the text does not vanish mid-collapse.
     setDescription("");
-    focusDescriptionNext.current = true;
+    moveFocusNext.current = true;
     setShowDescription(true);
   };
 
-  const closeDescription = () => setShowDescription(false);
+  const removeDescription = () => {
+    moveFocusNext.current = true;
+    setShowDescription(false);
+  };
 
   const submit = async () => {
     if (!canSubmit) return;
@@ -53,7 +58,7 @@ function TodoForm({ onSubmit, isSubmitting = false }: TodoFormProps) {
       await onSubmit({ title, description: showDescription ? description : "" })
     ) {
       setTitle("");
-      closeDescription();
+      setShowDescription(false);
     }
   };
 
@@ -95,29 +100,52 @@ function TodoForm({ onSubmit, isSubmitting = false }: TodoFormProps) {
         </Button>
       </div>
 
-      {!showDescription && (
-        <button
-          type="button"
-          onClick={openDescription}
-          className="focus-ring mt-3 -ml-1 inline-flex cursor-pointer items-center gap-1.5 rounded-[6px] px-1 py-0.5 text-[13px] text-ink-soft transition-colors hover:text-brand"
-        >
-          <PlusIcon className="size-3.5" />
-          {t.form.descriptionAdd}
-        </button>
-      )}
+      {/* The "Add description" link and the description panel swap smoothly: both stay mounted
+          (`inert` while hidden) and open or close their height (grid rows 0fr <-> 1fr).
+          Opening: the link folds away while the panel opens, then the content fades in.
+          Closing: the content fades out first, then the panel folds and the link comes back.
+          The delays only apply on the way into each state. */}
+      <div
+        inert={showDescription}
+        className={`grid grid-cols-[minmax(0,1fr)] transition-[grid-template-rows,opacity] ease-in-out-soft ${
+          showDescription
+            ? "grid-rows-[0fr] opacity-0 duration-(--motion-slow)"
+            : "grid-rows-[1fr] opacity-100 delay-200 duration-(--motion-gentle)"
+        }`}
+      >
+        {/* Only the vertical axis is clipped; the padding leaves room for the focus ring. */}
+        <div className="min-h-0 overflow-y-clip">
+          <div className="pt-3 pb-1">
+            <button
+              ref={addDescriptionRef}
+              type="button"
+              onClick={openDescription}
+              className="focus-ring -ml-1 inline-flex cursor-pointer items-center gap-1.5 rounded-[6px] px-1 py-0.5 text-[13px] text-ink-soft transition-colors hover:text-brand"
+            >
+              <PlusIcon className="size-3.5" />
+              {t.form.descriptionAdd}
+            </button>
+          </div>
+        </div>
+      </div>
 
-      {/* Always mounted: the panel opens and closes its height (grid rows 0fr <-> 1fr).
-          `inert` keeps the hidden field out of the tab order. */}
       <div
         inert={!showDescription}
-        className={`grid transition-[grid-template-rows,opacity] duration-(--motion-slow) ease-in-out-soft ${
-          showDescription
-            ? "grid-rows-[1fr] opacity-100"
-            : "grid-rows-[0fr] opacity-0"
+        // minmax(0, 1fr): without it the column grows to the field's min-content width, which
+        // with field-sizing: content is the longest unbroken word (it would overflow the form).
+        className={`grid grid-cols-[minmax(0,1fr)] transition-[grid-template-rows] duration-(--motion-gentle) ease-in-out-soft ${
+          showDescription ? "grid-rows-[1fr]" : "grid-rows-[0fr] delay-150"
         }`}
       >
         <div className="min-h-0 overflow-y-clip">
-          <div className="mt-5">
+          {/* Tailwind's translate-* sets the `translate` property (not `transform`). */}
+          <div
+            className={`pt-5 transition-[opacity,translate] ease-out-soft ${
+              showDescription
+                ? "translate-y-0 opacity-100 delay-300 duration-(--motion-gentle)"
+                : "-translate-y-1.5 opacity-0 duration-(--motion-base)"
+            }`}
+          >
             <div className="flex items-center justify-between gap-3">
               <label htmlFor={descriptionId} className="label-mono">
                 {t.form.descriptionLabel}
@@ -128,7 +156,7 @@ function TodoForm({ onSubmit, isSubmitting = false }: TodoFormProps) {
                 </span>
                 <button
                   type="button"
-                  onClick={closeDescription}
+                  onClick={removeDescription}
                   aria-label={t.form.descriptionRemove}
                   title={t.form.descriptionRemove}
                   className="focus-ring grid size-7 cursor-pointer place-items-center rounded-[6px] text-ink-faint transition-colors hover:bg-paper hover:text-ink"
@@ -146,7 +174,7 @@ function TodoForm({ onSubmit, isSubmitting = false }: TodoFormProps) {
               placeholder={t.form.descriptionPlaceholder}
               maxLength={TODO_LIMITS.descriptionMaxLength}
               rows={2}
-              className={`mt-1 block max-h-40 min-h-16 resize-none py-2 text-sm leading-relaxed field-sizing-content ${FIELD_CLASSES}`}
+              className={`mt-1 block max-h-40 min-h-16 resize-none py-2 text-sm leading-relaxed break-words field-sizing-content ${FIELD_CLASSES}`}
             />
             <p className="mt-1.5 font-mono text-[10px] tracking-[0.08em] text-ink-faint">
               {t.form.submitHint}
