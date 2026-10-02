@@ -5,7 +5,7 @@
       "title": "Learn React",
       "description": null,
       "completed": true,
-      "favorite": true,
+      "favorite": false,
       "id": 1
     },
     {
@@ -19,7 +19,7 @@
       "title": "Learn Vite",
       "description": null,
       "completed": false,
-      "favorite": true,
+      "favorite": false,
       "id": 3
     },
     {

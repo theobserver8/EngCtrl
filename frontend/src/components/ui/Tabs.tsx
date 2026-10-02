@@ -1,5 +1,18 @@
-import { useId, useImperativeHandle, useRef, useState, type KeyboardEvent, type ReactNode, type Ref } from "react";
+import {
+  useId,
+  useImperativeHandle,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type ReactNode,
+  type Ref,
+} from "react";
 import { formatCount } from "../../utils/format";
+import { MOTION_MS, prefersReducedMotion } from "../../utils/motion";
+
+// Mirrors --ease-in-out-soft in index.css (Web Animations take the curve, not the variable).
+const EASE_IN_OUT_SOFT = "cubic-bezier(0.65, 0, 0.35, 1)";
 
 export interface TabItem<T extends string> {
   id: T;
@@ -31,7 +44,8 @@ interface TabsProps<T extends string> {
  * Folder-style tabs over a hairline-framed panel. Follows the WAI-ARIA tabs pattern with
  * automatic activation: arrow keys, Home and End move between tabs.
  * Every panel stays mounted (inactive ones `hidden`) so rows keep their state and do not replay
- * their entrance animation when the user switches views.
+ * their entrance animation when the user switches views. The frame resizes smoothly from the
+ * height of one view to the other, so a long list opens as gently as a short one.
  */
 function Tabs<T extends string>({ label, tabs, selected, onSelect, aside, ref }: TabsProps<T>) {
   const baseId = useId();
@@ -39,6 +53,34 @@ function Tabs<T extends string>({ label, tabs, selected, onSelect, aside, ref }:
   const selectedIndex = tabs.findIndex((tab) => tab.id === selected);
   const tabId = (id: T) => `${baseId}-tab-${id}`;
   const panelId = (id: T) => `${baseId}-panel-${id}`;
+  const frameRef = useRef<HTMLDivElement>(null);
+  // Height of the frame right before a switch, animated to the new view's height after render.
+  const switchFromHeight = useRef<number | null>(null);
+  const resize = useRef<Animation | null>(null);
+
+  const select = (id: T) => {
+    if (id === selected) return;
+    // Measured mid-animation too, so quick successive switches continue from where they are.
+    switchFromHeight.current = frameRef.current?.getBoundingClientRect().height ?? null;
+    onSelect(id);
+  };
+
+  useLayoutEffect(() => {
+    const frame = frameRef.current;
+    const from = switchFromHeight.current;
+    switchFromHeight.current = null;
+    if (!frame || from === null) return;
+    resize.current?.cancel();
+    const to = frame.getBoundingClientRect().height;
+    if (from === to || prefersReducedMotion() || typeof frame.animate !== "function") return;
+    resize.current = frame.animate(
+      [
+        { height: `${from}px`, overflow: "clip" },
+        { height: `${to}px`, overflow: "clip" },
+      ],
+      { duration: MOTION_MS.slow, easing: EASE_IN_OUT_SOFT },
+    );
+  }, [selected]);
 
   useImperativeHandle(
     ref,
@@ -58,7 +100,7 @@ function Tabs<T extends string>({ label, tabs, selected, onSelect, aside, ref }:
     if (next === undefined) return;
     event.preventDefault();
     const { id } = tabs[next];
-    onSelect(id);
+    select(id);
     tabRefs.current.get(id)?.focus();
   };
 
@@ -73,7 +115,7 @@ function Tabs<T extends string>({ label, tabs, selected, onSelect, aside, ref }:
               id={tabId(tab.id)}
               panelId={panelId(tab.id)}
               isSelected={tab.id === selected}
-              onSelect={onSelect}
+              onSelect={select}
               buttonRef={(node) => {
                 if (node) tabRefs.current.set(tab.id, node);
                 else tabRefs.current.delete(tab.id);
@@ -84,22 +126,26 @@ function Tabs<T extends string>({ label, tabs, selected, onSelect, aside, ref }:
         {aside && <div className="pb-3">{aside}</div>}
       </div>
 
-      {tabs.map((tab) => (
-        <div
-          key={tab.id}
-          role="tabpanel"
-          id={panelId(tab.id)}
-          aria-labelledby={tabId(tab.id)}
-          hidden={tab.id !== selected}
-          // The entrance replays every time the panel is shown again (display: none -> block).
-          // The corner under the first tab stays square so the tab flows into the frame.
-          className={`rounded-control border border-line px-4 motion-safe:animate-[fade-in_var(--motion-base)_var(--ease-out-soft)] sm:px-5 ${
-            selectedIndex === 0 ? "rounded-tl-none" : ""
-          }`}
-        >
-          {tab.panel}
-        </div>
-      ))}
+      {/* The corner under the first tab stays square so the tab flows into the frame. */}
+      <div
+        ref={frameRef}
+        className={`rounded-control border border-line ${selectedIndex === 0 ? "rounded-tl-none" : ""}`}
+      >
+        {tabs.map((tab) => (
+          <div
+            key={tab.id}
+            role="tabpanel"
+            id={panelId(tab.id)}
+            aria-labelledby={tabId(tab.id)}
+            hidden={tab.id !== selected}
+            // The fade replays every time the panel is shown again (display: none -> block),
+            // timed with the frame's resize.
+            className="px-4 motion-safe:animate-[fade-in_var(--motion-slow)_var(--ease-out-soft)] sm:px-5"
+          >
+            {tab.panel}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

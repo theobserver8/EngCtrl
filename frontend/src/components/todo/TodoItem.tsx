@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import { useId, useLayoutEffect, useRef, useState } from "react";
 import { formatReference } from "../../utils/format";
 import { MOTION_MS, prefersReducedMotion } from "../../utils/motion";
 import type { Todo } from "../../types/todo";
@@ -31,7 +31,14 @@ function TodoItem({
   const descriptionId = useId();
   const [leaving, setLeaving] = useState(false);
   // Captured once: adding an animation class to an already mounted row would replay it.
-  const [enterAnimated] = useState(animateEnter);
+  // Dropped when it ends, and skipped for rows mounted in a hidden view: an animation does not
+  // run under display: none, so it would play when the view is shown, opening the row from zero
+  // height while the tabs frame resizes to the view.
+  const [enterAnimated, setEnterAnimated] = useState(animateEnter);
+  const rowRef = useRef<HTMLLIElement>(null);
+  useLayoutEffect(() => {
+    if (rowRef.current?.getClientRects().length === 0) setEnterAnimated(false);
+  }, []);
 
   // While a request is in flight the row ignores new toggles, but it is not `disabled`:
   // that would flash the not-allowed cursor on every click. The row only dims when the
@@ -61,7 +68,11 @@ function TodoItem({
 
   return (
     <li
+      ref={rowRef}
       aria-busy={isPending}
+      onAnimationEnd={(event) => {
+        if (event.target === event.currentTarget) setEnterAnimated(false);
+      }}
       inert={leaving}
       className={`grid transition-[grid-template-rows,opacity] duration-(--motion-slow) ease-in-out-soft ${
         enterAnimated ? "motion-safe:animate-[row-in_var(--motion-slow)_var(--ease-in-out-soft)]" : ""
