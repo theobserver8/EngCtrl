@@ -54,6 +54,9 @@
 
   html {
     color-scheme: light;
+    /* Reserve the scrollbar's space: when the list loads and the page starts scrolling, the
+       centred sheet does not shift sideways. */
+    scrollbar-gutter: stable;
     -webkit-text-size-adjust: 100%;
   }
 

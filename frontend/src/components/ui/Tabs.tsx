@@ -167,9 +167,14 @@ function TabButton<T extends string>({ tab, id, panelId, isSelected, onSelect, b
       <span className="relative flex items-center gap-2">
         {tab.icon}
         {tab.label}
-        {count !== undefined && (
+        {count === undefined ? (
+          // Reserves the counter's width while loading, so the tabs do not shift when it arrives.
+          <span aria-hidden="true" className="opacity-0">
+            ·&nbsp;00
+          </span>
+        ) : (
           // The space is ignored by the flex layout (gap spaces it) but keeps the accessible name readable.
-          <span className="flex overflow-hidden">
+          <span className="flex overflow-hidden motion-safe:animate-[fade-in_var(--motion-base)_var(--ease-out-soft)]">
             {" "}·&nbsp;
             <span
               key={change?.key}
