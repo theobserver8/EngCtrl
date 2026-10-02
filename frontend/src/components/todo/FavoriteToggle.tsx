@@ -22,7 +22,7 @@ function FavoriteToggle({ title, favorite, onToggle, autoFocus = false }: Favori
       title={label}
       // Only true right after the user toggled it: focus follows the row to its new section.
       autoFocus={autoFocus}
-      className={`focus-ring grid size-8 shrink-0 cursor-pointer place-items-center rounded-[6px] transition-[background-color,color,opacity] duration-150 hover:bg-lime-soft pointer-coarse:size-10 ${
+      className={`focus-ring grid size-8 shrink-0 cursor-pointer place-items-center rounded-[6px] transition-[background-color,color,opacity] duration-(--motion-base) hover:bg-lime-soft pointer-coarse:size-10 ${
         favorite
           ? "text-ink"
           : // Same reveal rules as the delete button (hover or keyboard focus in the row).
@@ -30,7 +30,7 @@ function FavoriteToggle({ title, favorite, onToggle, autoFocus = false }: Favori
       }`}
     >
       <StarIcon
-        className={`size-4 transition-[fill] duration-150 ${favorite ? "fill-lime" : "fill-transparent"}`}
+        className={`size-4 transition-[fill,transform] duration-(--motion-base) ${favorite ? "scale-110 fill-lime" : "fill-transparent"}`}
       />
     </button>
   );

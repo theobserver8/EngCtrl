@@ -1,4 +1,11 @@
-import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type FormEvent,
+  type KeyboardEvent,
+} from "react";
 import { useI18n } from "../../i18n/useI18n";
 import { TODO_LIMITS, type TodoDraft } from "../../types/todo";
 import Button from "../ui/Button";
@@ -11,7 +18,7 @@ interface TodoFormProps {
 
 // Shared "writing on a form line" look for both fields.
 const FIELD_CLASSES =
-  "w-full border-b border-line-strong bg-transparent text-ink transition-[border-color,box-shadow] duration-150 placeholder:text-ink-faint focus:border-brand focus:shadow-[0_1px_0_0_var(--color-brand)] focus:outline-none";
+  "w-full border-b border-line-strong bg-transparent text-ink transition-[border-color,box-shadow] placeholder:text-ink-faint focus:border-brand focus:shadow-[0_1px_0_0_var(--color-brand)] focus:outline-none";
 
 function TodoForm({ onSubmit, isSubmitting = false }: TodoFormProps) {
   const { t } = useI18n();
@@ -26,23 +33,25 @@ function TodoForm({ onSubmit, isSubmitting = false }: TodoFormProps) {
   // Focus the description only when the user opens it (not on reset or first render).
   const focusDescriptionNext = useRef(false);
   useEffect(() => {
-    if (showDescription && focusDescriptionNext.current) descriptionRef.current?.focus();
+    if (showDescription && focusDescriptionNext.current)
+      descriptionRef.current?.focus();
     focusDescriptionNext.current = false;
   }, [showDescription]);
 
   const openDescription = () => {
+    // Cleared when opening (not when closing) so the text does not vanish mid-collapse.
+    setDescription("");
     focusDescriptionNext.current = true;
     setShowDescription(true);
   };
 
-  const closeDescription = () => {
-    setDescription("");
-    setShowDescription(false);
-  };
+  const closeDescription = () => setShowDescription(false);
 
   const submit = async () => {
     if (!canSubmit) return;
-    if (await onSubmit({ title, description: showDescription ? description : "" })) {
+    if (
+      await onSubmit({ title, description: showDescription ? description : "" })
+    ) {
       setTitle("");
       closeDescription();
     }
@@ -54,7 +63,9 @@ function TodoForm({ onSubmit, isSubmitting = false }: TodoFormProps) {
   };
 
   // Enter adds a new line in the description; Ctrl/Cmd + Enter submits the form.
-  const handleDescriptionKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleDescriptionKeyDown = (
+    event: KeyboardEvent<HTMLTextAreaElement>,
+  ) => {
     if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
       event.preventDefault();
       void submit();
@@ -84,43 +95,7 @@ function TodoForm({ onSubmit, isSubmitting = false }: TodoFormProps) {
         </Button>
       </div>
 
-      {showDescription ? (
-        <div className="mt-5">
-          <div className="flex items-center justify-between gap-3">
-            <label htmlFor={descriptionId} className="label-mono">
-              {t.form.descriptionLabel}
-            </label>
-            <div className="flex items-center gap-1">
-              <span className="font-mono text-[10px] text-ink-faint tabular-nums">
-                {description.length}/{TODO_LIMITS.descriptionMaxLength}
-              </span>
-              <button
-                type="button"
-                onClick={closeDescription}
-                aria-label={t.form.descriptionRemove}
-                title={t.form.descriptionRemove}
-                className="focus-ring grid size-7 cursor-pointer place-items-center rounded-[6px] text-ink-faint transition-colors hover:bg-paper hover:text-ink"
-              >
-                <CloseIcon className="size-3.5" />
-              </button>
-            </div>
-          </div>
-          <textarea
-            ref={descriptionRef}
-            id={descriptionId}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            onKeyDown={handleDescriptionKeyDown}
-            placeholder={t.form.descriptionPlaceholder}
-            maxLength={TODO_LIMITS.descriptionMaxLength}
-            rows={2}
-            className={`mt-1 block max-h-40 min-h-16 resize-none py-2 text-sm leading-relaxed field-sizing-content ${FIELD_CLASSES}`}
-          />
-          <p className="mt-1.5 font-mono text-[10px] tracking-[0.08em] text-ink-faint">
-            {t.form.submitHint}
-          </p>
-        </div>
-      ) : (
+      {!showDescription && (
         <button
           type="button"
           onClick={openDescription}
@@ -130,6 +105,55 @@ function TodoForm({ onSubmit, isSubmitting = false }: TodoFormProps) {
           {t.form.descriptionAdd}
         </button>
       )}
+
+      {/* Always mounted: the panel opens and closes its height (grid rows 0fr <-> 1fr).
+          `inert` keeps the hidden field out of the tab order. */}
+      <div
+        inert={!showDescription}
+        className={`grid transition-[grid-template-rows,opacity] duration-(--motion-slow) ease-in-out-soft ${
+          showDescription
+            ? "grid-rows-[1fr] opacity-100"
+            : "grid-rows-[0fr] opacity-0"
+        }`}
+      >
+        <div className="min-h-0 overflow-y-clip">
+          <div className="mt-5">
+            <div className="flex items-center justify-between gap-3">
+              <label htmlFor={descriptionId} className="label-mono">
+                {t.form.descriptionLabel}
+              </label>
+              <div className="flex items-center gap-1">
+                <span className="font-mono text-[10px] text-ink-faint tabular-nums">
+                  {description.length}/{TODO_LIMITS.descriptionMaxLength}
+                </span>
+                <button
+                  type="button"
+                  onClick={closeDescription}
+                  aria-label={t.form.descriptionRemove}
+                  title={t.form.descriptionRemove}
+                  className="focus-ring grid size-7 cursor-pointer place-items-center rounded-[6px] text-ink-faint transition-colors hover:bg-paper hover:text-ink"
+                >
+                  <CloseIcon className="size-3.5" />
+                </button>
+              </div>
+            </div>
+            <textarea
+              ref={descriptionRef}
+              id={descriptionId}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              onKeyDown={handleDescriptionKeyDown}
+              placeholder={t.form.descriptionPlaceholder}
+              maxLength={TODO_LIMITS.descriptionMaxLength}
+              rows={2}
+              className={`mt-1 block max-h-40 min-h-16 resize-none py-2 text-sm leading-relaxed field-sizing-content ${FIELD_CLASSES}`}
+            />
+            <p className="mt-1.5 font-mono text-[10px] tracking-[0.08em] text-ink-faint">
+              {t.form.submitHint}
+            </p>
+          </div>
+        </div>
+      </div>
     </form>
   );
 }

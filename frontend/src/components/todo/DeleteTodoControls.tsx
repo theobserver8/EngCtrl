@@ -1,4 +1,11 @@
-import { useEffect, useRef, useState, type FocusEvent, type KeyboardEvent, type ReactNode } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type FocusEvent,
+  type KeyboardEvent,
+  type ReactNode,
+} from "react";
 import { useI18n } from "../../i18n/useI18n";
 import { TrashIcon } from "../ui/icons";
 
@@ -19,7 +26,11 @@ interface DeleteTodoControlsProps {
  * cancels instead of deleting. It also disarms on Escape, when focus leaves both buttons or
  * after a few seconds.
  */
-function DeleteTodoControls({ title, onConfirm, children }: DeleteTodoControlsProps) {
+function DeleteTodoControls({
+  title,
+  onConfirm,
+  children,
+}: DeleteTodoControlsProps) {
   const { t } = useI18n();
   const [armed, setArmed] = useState(false);
   const armedAt = useRef(0);
@@ -29,7 +40,10 @@ function DeleteTodoControls({ title, onConfirm, children }: DeleteTodoControlsPr
   useEffect(() => {
     if (!armed) return;
     confirmRef.current?.focus();
-    const timeout = window.setTimeout(() => setArmed(false), CONFIRM_TIMEOUT_MS);
+    const timeout = window.setTimeout(
+      () => setArmed(false),
+      CONFIRM_TIMEOUT_MS,
+    );
     return () => window.clearTimeout(timeout);
   }, [armed]);
 
@@ -39,7 +53,8 @@ function DeleteTodoControls({ title, onConfirm, children }: DeleteTodoControlsPr
   };
 
   const confirm = () => {
-    if (!armed || performance.now() - armedAt.current < CONFIRM_GUARD_MS) return;
+    if (!armed || performance.now() - armedAt.current < CONFIRM_GUARD_MS)
+      return;
     setArmed(false);
     onConfirm();
   };
@@ -53,26 +68,42 @@ function DeleteTodoControls({ title, onConfirm, children }: DeleteTodoControlsPr
   // Disarm when focus moves outside the pair (moving between both buttons keeps it armed).
   const cancelOnBlur = (event: FocusEvent) => {
     const next = event.relatedTarget;
-    if (next !== trashRef.current && next !== confirmRef.current) setArmed(false);
+    if (next !== trashRef.current && next !== confirmRef.current)
+      setArmed(false);
   };
 
-  const trashLabel = armed ? t.tasks.cancelDelete(title) : t.tasks.delete(title);
+  const trashLabel = armed
+    ? t.tasks.cancelDelete(title)
+    : t.tasks.delete(title);
 
   return (
     <>
-      {armed && (
-        <button
-          ref={confirmRef}
-          type="button"
-          onClick={confirm}
-          onBlur={cancelOnBlur}
-          onKeyDown={cancelOnEscape}
-          aria-label={t.tasks.confirmDelete(title)}
-          className="focus-ring inline-flex h-7 shrink-0 cursor-pointer items-center rounded-[6px] bg-danger px-2.5 text-xs font-medium text-white transition-colors duration-150 hover:bg-danger/90 pointer-coarse:h-9 motion-safe:animate-[confirm-in_160ms_var(--ease-out-soft)]"
-        >
-          {t.tasks.confirmDeleteShort}
-        </button>
-      )}
+      {/* Always mounted, collapsed to zero width while disarmed: opening its column makes
+          the reference code slide aside instead of jumping. `inert` keeps it out of the tab
+          order and the accessibility tree while hidden. */}
+      <div
+        inert={!armed}
+        className={`grid transition-[grid-template-columns,opacity] duration-(--motion-base) ease-in-out-soft ${
+          armed ? "grid-cols-[1fr] opacity-100" : "grid-cols-[0fr] opacity-0"
+        }`}
+      >
+        <div className="min-w-0 overflow-hidden">
+          {/* Padding inside the clipped box leaves room for the focus ring. */}
+          <div className="p-[3px]">
+            <button
+              ref={confirmRef}
+              type="button"
+              onClick={confirm}
+              onBlur={cancelOnBlur}
+              onKeyDown={cancelOnEscape}
+              aria-label={t.tasks.confirmDelete(title)}
+              className="focus-ring inline-flex h-7 cursor-pointer items-center rounded-[6px] bg-danger px-2.5 text-xs font-medium whitespace-nowrap text-white transition-colors hover:bg-danger/90 pointer-coarse:h-9"
+            >
+              {t.tasks.confirmDeleteShort}
+            </button>
+          </div>
+        </div>
+      </div>
 
       {children}
 
@@ -85,7 +116,7 @@ function DeleteTodoControls({ title, onConfirm, children }: DeleteTodoControlsPr
         aria-label={trashLabel}
         aria-pressed={armed}
         title={trashLabel}
-        className={`focus-ring grid size-8 shrink-0 cursor-pointer place-items-center rounded-[6px] transition-[background-color,color,opacity] duration-150 pointer-coarse:size-10 ${
+        className={`focus-ring grid size-8 shrink-0 cursor-pointer place-items-center rounded-[6px] transition-[background-color,color,opacity] duration-(--motion-base) pointer-coarse:size-10 ${
           armed
             ? "bg-danger-soft text-danger"
             : // Revealed on hover or *keyboard* focus in the row. Not `focus-within`: a mouse

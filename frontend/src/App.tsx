@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AppHeader from "./components/layout/AppHeader";
 import Sheet from "./components/layout/Sheet";
 import TodoForm from "./components/todo/TodoForm";
@@ -32,6 +32,11 @@ function App() {
   const [announcement, setAnnouncement] = useState("");
   // A todo that changes section is remounted; its favourite toggle gets the focus back.
   const [focusFavoriteId, setFocusFavoriteId] = useState<number | null>(null);
+  // Rows of the first load appear at once; rows added or moved afterwards open smoothly.
+  const [animateNewRows, setAnimateNewRows] = useState(false);
+  useEffect(() => {
+    if (status === "success") setAnimateNewRows(true);
+  }, [status]);
 
   const favorites = todos.filter((todo) => todo.favorite);
   const others = todos.filter((todo) => !todo.favorite);
@@ -67,12 +72,13 @@ function App() {
     onToggleFavorite: handleToggleFavorite,
     onDelete: handleDelete,
     focusFavoriteId,
+    animateNewRows,
   };
 
   const syncIndicator = isRefreshing && (
     <span
       aria-hidden="true"
-      className="flex items-center gap-1.5 font-mono text-[10px] tracking-[0.14em] text-ink-faint uppercase"
+      className="flex items-center gap-1.5 font-mono text-[10px] tracking-[0.14em] text-ink-faint uppercase motion-safe:animate-[fade-in_var(--motion-base)_var(--ease-out-soft)]"
     >
       <span className="size-1.5 rounded-full bg-brand motion-safe:animate-pulse" />
       {t.tasks.syncing}

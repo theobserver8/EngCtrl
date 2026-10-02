@@ -52,9 +52,9 @@ function ProgressRing({ completed, total }: ProgressRingProps) {
             d={d}
             fill="none"
             strokeWidth={STROKE}
-            className={`transition-[stroke] duration-300 ${index < filled ? "stroke-lime" : "stroke-line"}`}
+            className={`transition-[stroke] duration-(--motion-slow) ease-in-out-soft ${index < filled ? "stroke-lime" : "stroke-line"}`}
             // Staggered fill: segments light up one after another.
-            style={{ transitionDelay: `${index * 30}ms` }}
+            style={{ transitionDelay: `${index * 45}ms` }}
           />
         ))}
       </svg>

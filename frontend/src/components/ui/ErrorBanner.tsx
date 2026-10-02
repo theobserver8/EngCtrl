@@ -13,7 +13,7 @@ function ErrorBanner({ message, onRetry, retryLabel, onDismiss, dismissLabel }: 
   return (
     <div
       role="alert"
-      className="flex items-start gap-3 rounded-control border border-danger/25 bg-danger-soft py-3 pr-2 pl-4 text-sm text-danger"
+      className="motion-safe:animate-[fade-in_var(--motion-base)_var(--ease-out-soft)] flex items-start gap-3 rounded-control border border-danger/25 bg-danger-soft py-3 pr-2 pl-4 text-sm text-danger"
     >
       <AlertIcon className="mt-0.5 size-4 shrink-0" />
       <p className="min-w-0 flex-1 py-px">{message}</p>

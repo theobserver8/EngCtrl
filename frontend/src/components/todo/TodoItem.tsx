@@ -1,5 +1,6 @@
 import { useId, useState } from "react";
 import { formatReference } from "../../utils/format";
+import { MOTION_MS, prefersReducedMotion } from "../../utils/motion";
 import type { Todo } from "../../types/todo";
 import Checkbox from "../ui/Checkbox";
 import DeleteTodoControls from "./DeleteTodoControls";
@@ -13,14 +14,8 @@ interface TodoItemProps {
   onDelete: (todo: Todo) => void;
   /** Focus the favourite toggle on mount (the row just moved between sections). */
   focusFavoriteOnMount?: boolean;
-}
-
-const EXIT_DURATION_MS = 200;
-
-function prefersReducedMotion(): boolean {
-  return (
-    window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false
-  );
+  /** Open the row with an animation when it mounts (false for the rows of the first load). */
+  animateEnter?: boolean;
 }
 
 function TodoItem({
@@ -30,10 +25,13 @@ function TodoItem({
   onToggleFavorite,
   onDelete,
   focusFavoriteOnMount = false,
+  animateEnter = false,
 }: TodoItemProps) {
   const titleId = useId();
   const descriptionId = useId();
   const [leaving, setLeaving] = useState(false);
+  // Captured once: adding an animation class to an already mounted row would replay it.
+  const [enterAnimated] = useState(animateEnter);
 
   // While a request is in flight the row ignores new toggles, but it is not `disabled`:
   // that would flash the not-allowed cursor on every click. The row only dims when the
@@ -41,25 +39,31 @@ function TodoItem({
   const handleToggle = () => {
     if (!isPending) onToggle(todo);
   };
-  const handleToggleFavorite = () => {
-    if (!isPending) onToggleFavorite(todo);
-  };
-
-  // The row fades and collapses before it is removed, so the list closes the gap smoothly.
-  const handleDelete = () => {
+  /**
+   * Closes the row (fade + height collapse) and then runs the action, so the list closes the
+   * gap smoothly. Used when the row leaves its section: deleted, or moved to the other one.
+   */
+  const leaveThen = (action: () => void) => {
     if (prefersReducedMotion()) {
-      onDelete(todo);
+      action();
       return;
     }
     setLeaving(true);
-    window.setTimeout(() => onDelete(todo), EXIT_DURATION_MS);
+    window.setTimeout(action, MOTION_MS.slow);
   };
+
+  const handleToggleFavorite = () => {
+    if (!isPending && !leaving) leaveThen(() => onToggleFavorite(todo));
+  };
+  const handleDelete = () => leaveThen(() => onDelete(todo));
 
   return (
     <li
       aria-busy={isPending}
       inert={leaving}
-      className={`grid transition-[grid-template-rows,opacity] duration-200 ease-(--ease-out-soft) motion-safe:animate-[row-in_240ms_var(--ease-out-soft)] ${
+      className={`grid transition-[grid-template-rows,opacity] duration-(--motion-slow) ease-in-out-soft ${
+        enterAnimated ? "motion-safe:animate-[row-in_var(--motion-slow)_var(--ease-in-out-soft)]" : ""
+      } ${
         leaving
           ? "grid-rows-[0fr] opacity-0"
           : `grid-rows-[1fr] ${isPending ? "opacity-60 delay-300" : "delay-0"}`
@@ -71,7 +75,7 @@ function TodoItem({
         {/* Negative margin on an inner wrapper: the hover background bleeds slightly past the
           column while the list dividers stay aligned with the section heading. */}
         <div
-          className={`group relative -mx-3 rounded-control px-3 transition-colors duration-150 hover:bg-brand-soft/50 ${
+          className={`group relative -mx-3 rounded-control px-3 transition-colors hover:bg-brand-soft/50 ${
             todo.favorite
               ? "before:absolute before:inset-y-3 before:left-0 before:w-[3px] before:rounded-full before:bg-lime"
               : ""
@@ -88,7 +92,7 @@ function TodoItem({
               />
               <span
                 id={titleId}
-                className={`min-w-0 flex-1 text-[15px] leading-snug break-words transition-colors duration-200 ${
+                className={`min-w-0 flex-1 text-[15px] leading-snug break-words transition-colors duration-(--motion-base) ${
                   todo.completed ? "text-ink-faint" : "text-ink"
                 }`}
               >
@@ -120,7 +124,7 @@ function TodoItem({
           {todo.description && (
             <p
               id={descriptionId}
-              className={`-mt-2 pb-3.5 pl-9 text-[13px] leading-relaxed break-words whitespace-pre-line transition-colors duration-150 sm:pr-32 ${
+              className={`-mt-2 pb-3.5 pl-9 text-[13px] leading-relaxed break-words whitespace-pre-line transition-colors duration-(--motion-base) sm:pr-32 ${
                 todo.completed ? "text-ink-faint" : "text-ink-soft"
               }`}
             >

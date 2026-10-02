@@ -36,10 +36,21 @@
 
   --shadow-sheet: 0 1px 0 #0000000a, 0 12px 32px -12px #005db926;
 
+  /* Motion: soft deceleration for things that appear, symmetric curve for things that move. */
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out-soft: cubic-bezier(0.65, 0, 0.35, 1);
+  --default-transition-duration: 200ms;
+  --default-transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @layer base {
+  /* Motion scale, kept in sync with utils/motion.ts (JS timers wait for these). */
+  :root {
+    --motion-fast: 200ms; /* colours, hovers, small state changes */
+    --motion-base: 320ms; /* elements entering or leaving */
+    --motion-slow: 450ms; /* layout changes: rows opening/closing, sliding indicators */
+  }
+
   html {
     color-scheme: light;
     -webkit-text-size-adjust: 100%;
@@ -71,19 +82,20 @@
   mask-image: radial-gradient(ellipse 80% 70% at 50% 30%, #000 40%, transparent 100%);
 }
 
-/* Delete confirmation entering from the right, next to the reference code. */
-@keyframes confirm-in {
+/* Rows open their height and fade in (new tasks, tasks moving between sections), so the
+   list makes room smoothly instead of jumping. Applied to the row's grid container. */
+@keyframes row-in {
   from {
+    grid-template-rows: 0fr;
     opacity: 0;
-    transform: translateX(6px);
   }
 }
 
-/* Rows fade in with a small rise (new tasks, tasks moving between sections). */
-@keyframes row-in {
+/* Gentle entrance for banners, panels and lists. */
+@keyframes fade-in {
   from {
     opacity: 0;
-    transform: translateY(4px);
+    transform: translateY(-3px);
   }
 }
 
@@ -91,7 +103,7 @@
 .check-ink path {
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
-  transition: stroke-dashoffset 220ms var(--ease-out-soft) 60ms;
+  transition: stroke-dashoffset var(--motion-base) var(--ease-out-soft) 80ms;
 }
 .peer:checked ~ .check-ink path {
   stroke-dashoffset: 0;
@@ -105,7 +117,7 @@
   background-size: 0% 1px;
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
-  transition: background-size 320ms var(--ease-out-soft);
+  transition: background-size var(--motion-slow) var(--ease-in-out-soft);
 }
 .strike[data-struck="true"] {
   background-size: 100% 1px;

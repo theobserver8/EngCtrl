@@ -5,7 +5,7 @@ interface EmptyStateProps {
 /** Quiet empty state: a small line drawing of an inspection sheet and one sentence. */
 function EmptyState({ message }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center gap-4 py-10 text-center">
+    <div className="flex flex-col items-center gap-4 py-10 text-center motion-safe:animate-[fade-in_var(--motion-slow)_var(--ease-out-soft)]">
       <svg
         viewBox="0 0 64 64"
         className="size-16 text-line-strong"
