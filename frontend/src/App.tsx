@@ -1,3 +1,4 @@
+import { useState } from "react";
 import AppHeader from "./components/layout/AppHeader";
 import Sheet from "./components/layout/Sheet";
 import TodoForm from "./components/todo/TodoForm";
@@ -7,6 +8,7 @@ import ErrorBanner from "./components/ui/ErrorBanner";
 import { useTodos } from "./hooks/useTodos";
 import { useI18n } from "./i18n/useI18n";
 import { getErrorMessage } from "./utils/errorMessage";
+import type { Todo } from "./types/todo";
 import { formatCount } from "./utils/format";
 
 function App() {
@@ -21,10 +23,23 @@ function App() {
     refresh,
     addTodo,
     toggleTodo,
+    deleteTodo,
     clearError,
   } = useTodos();
+  // Polite live region so screen reader users hear the outcome of their actions.
+  const [announcement, setAnnouncement] = useState("");
   const completedCount = todos.filter((todo) => todo.completed).length;
   const loadFailed = status === "error";
+
+  const handleAdd = async (title: string) => {
+    const added = await addTodo(title);
+    if (added) setAnnouncement(t.announcements.added(title.trim()));
+    return added;
+  };
+
+  const handleDelete = async (todo: Todo) => {
+    if (await deleteTodo(todo)) setAnnouncement(t.announcements.deleted(todo.title));
+  };
 
   return (
     <div className="relative min-h-dvh overflow-x-clip">
@@ -35,7 +50,7 @@ function App() {
           <AppHeader total={todos.length} completed={completedCount} />
 
           <div className="mt-10">
-            <TodoForm onSubmit={addTodo} isSubmitting={isCreating} />
+            <TodoForm onSubmit={handleAdd} isSubmitting={isCreating} />
           </div>
 
           {error && (
@@ -69,12 +84,21 @@ function App() {
             {status === "loading" && <TodoListSkeleton label={t.tasks.loading} />}
             {status === "success" &&
               (todos.length > 0 ? (
-                <TodoList todos={todos} pendingIds={pendingIds} onToggle={toggleTodo} />
+                <TodoList
+                  todos={todos}
+                  pendingIds={pendingIds}
+                  onToggle={toggleTodo}
+                  onDelete={handleDelete}
+                />
               ) : (
                 <p className="py-8 text-center text-sm text-ink-faint">{t.tasks.empty}</p>
               ))}
           </section>
         </Sheet>
+
+        <p role="status" aria-live="polite" className="sr-only">
+          {announcement}
+        </p>
 
         <footer className="mt-6 flex items-center justify-between px-1 font-mono text-[10px] tracking-[0.14em] text-ink-faint uppercase">
           <span>{t.footer.project}</span>

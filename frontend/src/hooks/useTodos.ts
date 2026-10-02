@@ -20,6 +20,8 @@ export interface UseTodosResult {
   /** Resolves to true when the todo was created, so the form knows when to reset. */
   addTodo: (title: string) => Promise<boolean>;
   toggleTodo: (todo: Todo) => Promise<void>;
+  /** Resolves to true when the todo is gone from the server. */
+  deleteTodo: (todo: Todo) => Promise<boolean>;
   clearError: () => void;
 }
 
@@ -72,6 +74,9 @@ export function useTodos(): UseTodosResult {
    */
   const runAction = useCallback(
     async (action: () => Promise<unknown>): Promise<boolean> => {
+      // A list request started before this mutation would bring stale data and could undo
+      // the optimistic update on screen (e.g. a deleted row reappearing for a moment).
+      listRequest.current?.abort();
       try {
         await action();
         setActionError(null);
@@ -129,6 +134,30 @@ export function useTodos(): UseTodosResult {
     [runAction, markPending],
   );
 
+  const deleteTodo = useCallback(
+    async (todo: Todo) => {
+      // Optimistic removal. Server order is id order (ids only grow), so a rollback can
+      // put the todo back in its place by sorting.
+      setTodos((prev) => prev.filter((t) => t.id !== todo.id));
+      const deleted = await runAction(async () => {
+        try {
+          await todosApi.remove(todo.id);
+        } catch (err) {
+          // Already deleted (e.g. from another tab): the intent is fulfilled, not an error.
+          if (err instanceof ApiError && err.status === 404) return;
+          throw err;
+        }
+      });
+      if (!deleted) {
+        setTodos((prev) =>
+          prev.some((t) => t.id === todo.id) ? prev : [...prev, todo].sort((a, b) => a.id - b.id),
+        );
+      }
+      return deleted;
+    },
+    [runAction],
+  );
+
   const clearError = useCallback(() => {
     setActionError(null);
     setLoadError(null);
@@ -144,6 +173,7 @@ export function useTodos(): UseTodosResult {
     refresh,
     addTodo,
     toggleTodo,
+    deleteTodo,
     clearError,
   };
 }

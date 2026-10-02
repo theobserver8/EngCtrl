@@ -10,4 +10,6 @@ export const todosApi = {
 
   update: (id: number, changes: TodoUpdate) =>
     request<Todo>(`${RESOURCE}/${id}`, { method: "PATCH", body: changes }),
+
+  remove: (id: number) => request<void>(`${RESOURCE}/${id}`, { method: "DELETE" }),
 };

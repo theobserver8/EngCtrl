@@ -31,6 +31,13 @@ export const en = {
     loading: "Loading tasks…",
     syncing: "Syncing",
     empty: "No tasks yet. Add the first one above.",
+    delete: (title: string) => `Delete task: ${title}`,
+    confirmDelete: (title: string) => `Confirm deletion of task: ${title}`,
+    confirmDeleteShort: "Delete?",
+  },
+  announcements: {
+    added: (title: string) => `Task added: ${title}`,
+    deleted: (title: string) => `Task deleted: ${title}`,
   },
   errors: {
     network: "Could not reach the server. Check that the API is running.",

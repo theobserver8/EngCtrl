@@ -5,9 +5,10 @@ interface TodoListProps {
   todos: Todo[];
   pendingIds: ReadonlySet<number>;
   onToggle: (todo: Todo) => void;
+  onDelete: (todo: Todo) => void;
 }
 
-function TodoList({ todos, pendingIds, onToggle }: TodoListProps) {
+function TodoList({ todos, pendingIds, onToggle, onDelete }: TodoListProps) {
   return (
     <ul className="divide-y divide-line">
       {todos.map((todo) => (
@@ -16,6 +17,7 @@ function TodoList({ todos, pendingIds, onToggle }: TodoListProps) {
           todo={todo}
           isPending={pendingIds.has(todo.id)}
           onToggle={onToggle}
+          onDelete={onDelete}
         />
       ))}
     </ul>

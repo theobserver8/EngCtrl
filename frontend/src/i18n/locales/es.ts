@@ -33,6 +33,13 @@ export const es: Messages = {
     loading: "Cargando tareas…",
     syncing: "Sincronizando",
     empty: "Todavía no hay tareas. Añade la primera arriba.",
+    delete: (title) => `Eliminar tarea: ${title}`,
+    confirmDelete: (title) => `Confirmar eliminación de la tarea: ${title}`,
+    confirmDeleteShort: "¿Borrar?",
+  },
+  announcements: {
+    added: (title) => `Tarea añadida: ${title}`,
+    deleted: (title) => `Tarea eliminada: ${title}`,
   },
   errors: {
     network: "No se ha podido conectar con el servidor. Comprueba que la API está en marcha.",
