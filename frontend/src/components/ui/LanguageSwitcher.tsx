@@ -4,8 +4,8 @@ import { useI18n } from "../../i18n/useI18n";
 import { SpainFlag, UnitedKingdomFlag } from "./flags";
 
 const FLAGS: Record<Locale, ComponentType<SVGProps<SVGSVGElement>>> = {
-  es: SpainFlag,
   en: UnitedKingdomFlag,
+  es: SpainFlag,
 };
 
 function LanguageSwitcher() {

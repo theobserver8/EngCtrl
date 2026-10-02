@@ -25,12 +25,12 @@ control. It covers every task in [`INSTRUCTIONS.md`](INSTRUCTIONS.md), with a bi
 
 Beyond the brief:
 
-- **Spanish / English** interface with a flag language switcher; the choice is remembered.
+- **English / Spanish** interface with a flag language switcher; starts in English and remembers the choice.
 - **Robust storage**: thread-safe JSON repository with atomic writes, automatic migration of the
   original data file, and ids that are never reused after a delete.
 - **Accessibility**: semantic HTML, keyboard support, visible focus, screen reader announcements,
   WCAG AA contrast and support for the *reduced motion* setting.
-- **Tests**: 55 backend tests (pytest) and 48 frontend tests (Vitest + Testing Library).
+- **Tests**: 55 backend tests (pytest) and 47 frontend tests (Vitest + Testing Library).
 
 ## Getting started
 

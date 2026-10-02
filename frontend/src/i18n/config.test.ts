@@ -14,27 +14,19 @@ describe("detectLocale", () => {
     expect(detectLocale()).toBe("es");
   });
 
-  it("falls back to the first supported browser language", () => {
-    mockBrowserLanguages(["fr-FR", "es-ES", "en-US"]);
-
-    expect(detectLocale()).toBe("es");
-  });
-
-  it("uses English when nothing matches", () => {
-    mockBrowserLanguages(["de-DE"]);
+  it("starts in English regardless of the browser language", () => {
+    mockBrowserLanguages(["es-ES", "en-US"]);
 
     expect(detectLocale()).toBe("en");
   });
 
   it("ignores invalid saved values", () => {
-    mockBrowserLanguages(["en-US"]);
     window.localStorage.setItem(LOCALE_STORAGE_KEY, "klingon");
 
     expect(detectLocale()).toBe("en");
   });
 
   it("keeps working when storage is unavailable", () => {
-    mockBrowserLanguages(["es"]);
     vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
       throw new Error("SecurityError");
     });
@@ -42,7 +34,7 @@ describe("detectLocale", () => {
       throw new Error("SecurityError");
     });
 
-    expect(detectLocale()).toBe("es");
+    expect(detectLocale()).toBe("en");
     expect(() => storeLocale("en")).not.toThrow();
   });
 });

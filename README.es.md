@@ -25,13 +25,13 @@ bilingüe (español / inglés) y tests automáticos en ambas partes.
 
 Además de lo que pide el enunciado:
 
-- Interfaz en **español / inglés** con selector de idioma por banderas; la elección se recuerda.
+- Interfaz en **inglés / español** con selector de idioma por banderas; arranca en inglés y recuerda la elección.
 - **Almacenamiento robusto**: repositorio JSON seguro ante peticiones simultáneas, con escrituras
   atómicas, migración automática del archivo de datos original e ids que nunca se reutilizan tras
   un borrado.
 - **Accesibilidad**: HTML semántico, uso completo con teclado, foco visible, avisos para lectores
   de pantalla, contraste WCAG AA y respeto a la preferencia de *reducir movimiento*.
-- **Tests**: 55 tests de backend (pytest) y 48 de frontend (Vitest + Testing Library).
+- **Tests**: 55 tests de backend (pytest) y 47 de frontend (Vitest + Testing Library).
 
 ## Puesta en marcha
 
