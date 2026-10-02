@@ -1,1 +1,149 @@
 @import "tailwindcss";
+@import "@fontsource-variable/inter-tight";
+@import "@fontsource-variable/jetbrains-mono";
+
+/* CEMOSA design tokens. Corporate colours sampled from the official logo. */
+@theme {
+  /* Surfaces */
+  --color-paper: #f6f7f4;
+  --color-sheet: #ffffff;
+  --color-line: #e2e5e0;
+  --color-line-strong: #cfd4ce;
+  --color-grid: #005db90d;
+  --color-grid-major: #005db914;
+
+  /* Text */
+  --color-ink: #2f3734;
+  --color-ink-soft: #5c6561;
+  --color-ink-faint: #6b7470; /* 4.8:1 on white: WCAG AA for small text */
+
+  /* Corporate */
+  --color-brand: #005db9;
+  --color-brand-strong: #004a94;
+  --color-brand-soft: #e6f0fa;
+  --color-lime: #d4e458;
+  --color-lime-soft: #f3f8d3;
+
+  /* Semantic */
+  --color-danger: #b3412e;
+  --color-danger-soft: #fbeeeb;
+
+  --font-sans: "Inter Tight Variable", "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, "Cascadia Mono", monospace;
+
+  --radius-sheet: 14px;
+  --radius-control: 8px;
+
+  --shadow-sheet: 0 1px 0 #0000000a, 0 12px 32px -12px #005db926;
+
+  /* Motion: soft deceleration for things that appear, symmetric curve for things that move. */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out-soft: cubic-bezier(0.65, 0, 0.35, 1);
+  --default-transition-duration: 200ms;
+  --default-transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@layer base {
+  /* Motion scale, kept in sync with utils/motion.ts (JS timers wait for these). */
+  :root {
+    --motion-fast: 200ms; /* colours, hovers, small state changes */
+    --motion-base: 320ms; /* elements entering or leaving */
+    --motion-slow: 450ms; /* layout changes: rows opening/closing, sliding indicators */
+  }
+
+  html {
+    color-scheme: light;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-paper font-sans text-ink antialiased;
+    font-feature-settings: "ss01", "cv11";
+  }
+
+  ::selection {
+    @apply bg-lime text-ink;
+  }
+}
+
+/* Drafting-paper grid: minor lines every 24px, major lines every 120px, faded at the edges. */
+@utility blueprint-grid {
+  background-image:
+    linear-gradient(to right, var(--color-grid-major) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--color-grid-major) 1px, transparent 1px),
+    linear-gradient(to right, var(--color-grid) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--color-grid) 1px, transparent 1px);
+  background-size:
+    120px 120px,
+    120px 120px,
+    24px 24px,
+    24px 24px;
+  background-position: center top;
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 30%, #000 40%, transparent 100%);
+}
+
+/* Rows open their height and fade in (new tasks, tasks moving between sections), so the
+   list makes room smoothly instead of jumping. Applied to the row's grid container. */
+@keyframes row-in {
+  from {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+}
+
+/* Gentle entrance for banners, panels and lists. */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+}
+
+/* "Inked" check: the tick is drawn when the box is checked (path uses pathLength="1"). */
+.check-ink path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset var(--motion-base) var(--ease-out-soft) 80ms;
+}
+.peer:checked ~ .check-ink path {
+  stroke-dashoffset: 0;
+}
+
+/* Strike-through drawn from left to right, line by line, instead of appearing at once. */
+.strike {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position: 0 58%;
+  background-size: 0% 1px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  transition: background-size var(--motion-slow) var(--ease-in-out-soft);
+}
+.strike[data-struck="true"] {
+  background-size: 100% 1px;
+}
+
+/* Respect the OS setting: no movement, state changes still visible instantly. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+  }
+}
+
+/* Section/metadata label, like the annotations of a technical drawing. */
+@utility label-mono {
+  @apply font-mono text-[11px] font-medium tracking-[0.14em] text-ink-soft uppercase tabular-nums;
+}
+
+/* Single, consistent keyboard focus indicator for every interactive element. */
+@utility focus-ring {
+  &:focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+  }
+}

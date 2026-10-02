@@ -1,77 +1,172 @@
-// src/App.tsx
-import { useState } from "react";
-import type { Todo } from "./types/todo";
-import { getTodos, createTodo, toggleTodoStatus } from "./api/todo";
+import { useEffect, useState } from "react";
+import AppHeader from "./components/layout/AppHeader";
+import Sheet from "./components/layout/Sheet";
+import TodoForm from "./components/todo/TodoForm";
+import TodoList from "./components/todo/TodoList";
+import TodoListSkeleton from "./components/todo/TodoListSkeleton";
+import TodoSection from "./components/todo/TodoSection";
+import EmptyState from "./components/ui/EmptyState";
+import ErrorBanner from "./components/ui/ErrorBanner";
+import { useTodos } from "./hooks/useTodos";
+import { useI18n } from "./i18n/useI18n";
+import type { Todo, TodoDraft } from "./types/todo";
+import { getErrorMessage } from "./utils/errorMessage";
 
 function App() {
-  const [todos, setTodos] = useState<Todo[]>([]);
-  const [title, setTitle] = useState("");
+  const { t } = useI18n();
+  const {
+    todos,
+    status,
+    isRefreshing,
+    error,
+    pendingIds,
+    isCreating,
+    refresh,
+    addTodo,
+    toggleTodo,
+    toggleFavorite,
+    deleteTodo,
+    clearError,
+  } = useTodos();
+  // Polite live region so screen reader users hear the outcome of their actions.
+  const [announcement, setAnnouncement] = useState("");
+  // A todo that changes section is remounted; its favourite toggle gets the focus back.
+  const [focusFavoriteId, setFocusFavoriteId] = useState<number | null>(null);
+  // Rows of the first load appear at once; rows added or moved afterwards open smoothly.
+  const [animateNewRows, setAnimateNewRows] = useState(false);
+  useEffect(() => {
+    if (status === "success") setAnimateNewRows(true);
+  }, [status]);
 
-  const loadTodos = () => {
-    getTodos().then((data) => {
-      setTodos(data);
-    });
+  const favorites = todos.filter((todo) => todo.favorite);
+  const others = todos.filter((todo) => !todo.favorite);
+  const completedCount = todos.filter((todo) => todo.completed).length;
+  const loadFailed = status === "error";
+  const loaded = status === "success";
+
+  const handleAdd = async (draft: TodoDraft) => {
+    const added = await addTodo(draft);
+    if (added) setAnnouncement(t.announcements.added(draft.title.trim()));
+    return added;
   };
 
-  const addTodo = () => {
-    if (!title.trim()) return;
-    createTodo(title)
+  const handleToggleFavorite = async (todo: Todo) => {
+    setFocusFavoriteId(todo.id);
+    if (await toggleFavorite(todo)) {
+      setAnnouncement(
+        todo.favorite
+          ? t.announcements.unfavorited(todo.title)
+          : t.announcements.favorited(todo.title),
+      );
+    }
   };
 
-  const toggleTodo = (id: number) => {
-    const todo = todos.find((t) => t.id === id);
-    if (!todo) return;
-
-    toggleTodoStatus(id, todo.completed).then((updated) => {
-      setTodos((prev) => prev.map((t) => (t.id === id ? updated : t)));
-    });
+  const handleDelete = async (todo: Todo) => {
+    if (await deleteTodo(todo))
+      setAnnouncement(t.announcements.deleted(todo.title));
   };
+
+  const listProps = {
+    pendingIds,
+    onToggle: toggleTodo,
+    onToggleFavorite: handleToggleFavorite,
+    onDelete: handleDelete,
+    focusFavoriteId,
+    animateNewRows,
+  };
+
+  const syncIndicator = isRefreshing && (
+    <span
+      aria-hidden="true"
+      className="flex items-center gap-1.5 font-mono text-[10px] tracking-[0.14em] text-ink-faint uppercase motion-safe:animate-[fade-in_var(--motion-base)_var(--ease-out-soft)]"
+    >
+      <span className="size-1.5 rounded-full bg-brand motion-safe:animate-pulse" />
+      {t.tasks.syncing}
+    </span>
+  );
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-2xl">
-        <h1 className="text-2xl font-bold mb-4 text-gray-800">ToDo List</h1>
+    <div className="relative min-h-dvh overflow-x-clip">
+      <div
+        aria-hidden="true"
+        className="blueprint-grid pointer-events-none fixed inset-0"
+      />
 
-        <div className="flex gap-2 mb-8">
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Add a new task..."
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <button
-            onClick={addTodo}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition cursor-pointer"
-          >
-            Add
-          </button>
-          <button
-            onClick={loadTodos}
-            className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition cursor-pointer"
-          >
-            Load Tasks
-          </button>
-        </div>
+      <main className="relative mx-auto w-full max-w-3xl px-4 py-10 sm:px-6 sm:py-16">
+        <Sheet>
+          <AppHeader total={todos.length} completed={completedCount} />
 
-        <ul className="space-y-2">
-          {todos.map((todo) => (
-            <li
-              key={todo.id}
-              className={`flex items-center gap-2 bg-gray-50 p-3 rounded-lg border border-gray-200 ${
-                todo.completed ? "line-through text-gray-400" : ""
-              }`}
-            >
-              <input
-                type="checkbox"
-                checked={todo.completed}
-                onChange={() => toggleTodo(todo.id)}
-                className="cursor-pointer"
+          <div className="mt-10">
+            <TodoForm onSubmit={handleAdd} isSubmitting={isCreating} />
+          </div>
+
+          {error && (
+            <div className="mt-6">
+              <ErrorBanner
+                message={getErrorMessage(error, t.errors)}
+                onRetry={loadFailed ? refresh : undefined}
+                retryLabel={t.actions.retry}
+                onDismiss={loadFailed ? undefined : clearError}
+                dismissLabel={t.actions.dismiss}
               />
-              <span>{todo.title}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
+            </div>
+          )}
+
+          <div aria-busy={isRefreshing}>
+            {loaded && todos.length > 0 && (
+              <TodoSection
+                title={t.tasks.favoritesHeading}
+                count={favorites.length}
+                aside={syncIndicator}
+                className="mt-10"
+              >
+                {favorites.length > 0 ? (
+                  <TodoList todos={favorites} {...listProps} />
+                ) : (
+                  <p className="py-4 text-[13px] text-ink-faint">
+                    {t.tasks.favoritesEmpty}
+                  </p>
+                )}
+              </TodoSection>
+            )}
+
+            <TodoSection
+              title={t.tasks.heading}
+              count={others.length}
+              aside={loaded && todos.length > 0 ? null : syncIndicator}
+              className="mt-10"
+            >
+              {status === "loading" && (
+                <TodoListSkeleton label={t.tasks.loading} />
+              )}
+              {loadFailed && (
+                <p className="py-8 text-center text-sm text-ink-faint">
+                  {t.tasks.unavailable}
+                </p>
+              )}
+              {loaded &&
+                (others.length > 0 ? (
+                  <TodoList todos={others} {...listProps} />
+                ) : todos.length > 0 ? (
+                  <p className="py-8 text-center text-sm text-ink-faint">
+                    {t.tasks.allFavorites}
+                  </p>
+                ) : (
+                  <EmptyState message={t.tasks.empty} />
+                ))}
+            </TodoSection>
+          </div>
+        </Sheet>
+
+        <p role="status" aria-live="polite" className="sr-only">
+          {announcement}
+        </p>
+
+        <footer className="mt-6 flex items-center justify-between px-1 font-mono text-[10px] tracking-[0.14em] text-ink-faint uppercase">
+          <span>{t.footer.project}</span>
+          <span>{t.footer.revision}</span>
+        </footer>
+      </main>
     </div>
   );
 }

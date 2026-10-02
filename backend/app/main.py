@@ -1,60 +1,29 @@
-import json
-from pathlib import Path
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
 
-DATA_FILE = Path(__file__).parent / "todos.json"
-
-app = FastAPI()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+from app.api.routes import todos
+from app.core.config import Settings, get_settings
+from app.core.exceptions import register_exception_handlers
+from app.repositories.json_repository import JsonTodoRepository
 
 
-class Todo(BaseModel):
-    title: str
-    completed: bool = False
+def create_app(settings: Settings | None = None) -> FastAPI:
+    """Application factory: wires settings, storage, middleware and routes."""
+    settings = settings or get_settings()
+
+    app = FastAPI(title=settings.app_name, version="1.0.0")
+    app.state.todo_repository = JsonTodoRepository(settings.data_file)
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=list(settings.cors_origins),
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+    register_exception_handlers(app)
+    app.include_router(todos.router)
+
+    return app
 
 
-def load_todos() -> list[Todo]:
-    """Load todos from the JSON file."""
-    with open(DATA_FILE, "r", encoding="utf-8") as f:
-        return [Todo(**todo) for todo in json.load(f)]
-
-
-def save_todos(todos: list[Todo]):
-    """
-    Save todos to the JSON file.
-
-    Args:
-        todos (list[Todo]): List of Todo objects to save.
-    """
-    with open(DATA_FILE, "w", encoding="utf-8") as f:
-        json.dump([todo.model_dump() for todo in todos], f, indent=2)
-
-
-@app.get("/todos", response_model=list[Todo])
-def get_todos():
-    """Get all todos."""
-    return load_todos()
-
-
-@app.post("/todos", response_model=Todo)
-def add_todo(todo: Todo):
-    """
-    Add a new todo.
-
-    Args:
-        todo (Todo): The todo to add.
-    """
-    todos = load_todos()
-    todos.append(todo)
-    save_todos(todos)
-    return todo
+app = create_app()

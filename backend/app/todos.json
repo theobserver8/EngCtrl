@@ -1,30 +1,54 @@
-[
-  {
-    "title": "Learn React",
-    "completed": true
-  },
-  {
-    "title": "Learn TypeScript",
-    "completed": true
-  },
-  {
-    "title": "Learn Vite",
-    "completed": false
-  },
-  {
-    "title": "Learn FastAPI",
-    "completed": false
-  },
-  {
-    "title": "Learn Docker",
-    "completed": false
-  },
-  {
-    "title": "Learn PostgreSQL",
-    "completed": false
-  },
-  {
-    "title": "Learn Tailwind CSS",
-    "completed": false
-  }
-]
+{
+  "next_id": 17,
+  "todos": [
+    {
+      "title": "Learn React",
+      "description": null,
+      "completed": true,
+      "favorite": false,
+      "id": 1
+    },
+    {
+      "title": "Learn TypeScript",
+      "description": null,
+      "completed": true,
+      "favorite": false,
+      "id": 2
+    },
+    {
+      "title": "Learn Vite",
+      "description": null,
+      "completed": false,
+      "favorite": false,
+      "id": 3
+    },
+    {
+      "title": "Learn FastAPI",
+      "description": null,
+      "completed": false,
+      "favorite": false,
+      "id": 4
+    },
+    {
+      "title": "Learn Docker",
+      "description": null,
+      "completed": false,
+      "favorite": false,
+      "id": 5
+    },
+    {
+      "title": "Learn PostgreSQL",
+      "description": null,
+      "completed": false,
+      "favorite": false,
+      "id": 6
+    },
+    {
+      "title": "Learn Tailwind CSS",
+      "description": null,
+      "completed": false,
+      "favorite": false,
+      "id": 7
+    }
+  ]
+}
