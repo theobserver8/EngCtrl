@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError, toApiError } from "../api/client";
 import { todosApi } from "../api/todos";
-import type { Todo } from "../types/todo";
+import type { Todo, TodoDraft, TodoUpdate } from "../types/todo";
 
 /** State of the first load. Later reloads are reported through `isRefreshing`. */
 export type LoadStatus = "loading" | "success" | "error";
@@ -18,8 +18,10 @@ export interface UseTodosResult {
   isCreating: boolean;
   refresh: () => Promise<void>;
   /** Resolves to true when the todo was created, so the form knows when to reset. */
-  addTodo: (title: string) => Promise<boolean>;
-  toggleTodo: (todo: Todo) => Promise<void>;
+  addTodo: (draft: TodoDraft) => Promise<boolean>;
+  /** Optimistic toggles: resolve to true when the change was saved. */
+  toggleTodo: (todo: Todo) => Promise<boolean>;
+  toggleFavorite: (todo: Todo) => Promise<boolean>;
   /** Resolves to true when the todo is gone from the server. */
   deleteTodo: (todo: Todo) => Promise<boolean>;
   clearError: () => void;
@@ -101,13 +103,19 @@ export function useTodos(): UseTodosResult {
   }, []);
 
   const addTodo = useCallback(
-    async (title: string) => {
-      const trimmed = title.trim();
-      if (!trimmed) return false;
+    async ({ title, description }: TodoDraft) => {
+      const trimmedTitle = title.trim();
+      const trimmedDescription = description.trim();
+      if (!trimmedTitle) return false;
 
       setIsCreating(true);
       try {
-        return await runAction(() => todosApi.create({ title: trimmed }));
+        return await runAction(() =>
+          todosApi.create({
+            title: trimmedTitle,
+            ...(trimmedDescription && { description: trimmedDescription }),
+          }),
+        );
       } finally {
         setIsCreating(false);
       }
@@ -115,23 +123,39 @@ export function useTodos(): UseTodosResult {
     [runAction],
   );
 
-  const toggleTodo = useCallback(
-    async (todo: Todo) => {
-      const setCompleted = (completed: boolean) =>
-        setTodos((prev) => prev.map((t) => (t.id === todo.id ? { ...t, completed } : t)));
+  /**
+   * Applies a change on screen instantly, then saves it. On failure the previous values are
+   * restored explicitly: the reload that follows may fail too (e.g. the server is down).
+   */
+  const patchOptimistic = useCallback(
+    async (todo: Todo, changes: TodoUpdate) => {
+      const previous = Object.fromEntries(
+        Object.keys(changes).map((key) => [key, todo[key as keyof TodoUpdate]]),
+      ) as TodoUpdate;
+      const apply = (values: TodoUpdate) =>
+        setTodos((prev) => prev.map((t) => (t.id === todo.id ? { ...t, ...values } : t)));
 
-      // Optimistic update so the checkbox reacts instantly. On failure it is rolled back
-      // explicitly: the reload that follows may fail too (e.g. the server is down).
-      setCompleted(!todo.completed);
+      apply(changes);
       markPending(todo.id, true);
       try {
-        const saved = await runAction(() => todosApi.update(todo.id, { completed: !todo.completed }));
-        if (!saved) setCompleted(todo.completed);
+        const saved = await runAction(() => todosApi.update(todo.id, changes));
+        if (!saved) apply(previous);
+        return saved;
       } finally {
         markPending(todo.id, false);
       }
     },
     [runAction, markPending],
+  );
+
+  const toggleTodo = useCallback(
+    (todo: Todo) => patchOptimistic(todo, { completed: !todo.completed }),
+    [patchOptimistic],
+  );
+
+  const toggleFavorite = useCallback(
+    (todo: Todo) => patchOptimistic(todo, { favorite: !todo.favorite }),
+    [patchOptimistic],
   );
 
   const deleteTodo = useCallback(
@@ -173,6 +197,7 @@ export function useTodos(): UseTodosResult {
     refresh,
     addTodo,
     toggleTodo,
+    toggleFavorite,
     deleteTodo,
     clearError,
   };

@@ -46,6 +46,14 @@ export function CloseIcon(props: IconProps) {
   );
 }
 
+export function StarIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M8 1.9l1.85 3.85 4.2.55-3.07 2.93.77 4.17L8 11.37l-3.75 2.03.77-4.17L1.95 6.3l4.2-.55z" />
+    </Icon>
+  );
+}
+
 export function TrashIcon(props: IconProps) {
   return (
     <Icon {...props}>

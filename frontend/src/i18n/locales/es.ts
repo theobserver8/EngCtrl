@@ -23,6 +23,11 @@ export const es: Messages = {
     label: "Nueva tarea",
     placeholder: "Describe la próxima tarea a revisar…",
     submit: "Añadir",
+    descriptionLabel: "Descripción",
+    descriptionPlaceholder: "Detalles opcionales: ubicación, elemento, referencia…",
+    descriptionAdd: "Añadir descripción",
+    descriptionRemove: "Quitar descripción",
+    submitHint: "Ctrl + Enter para añadir",
   },
   actions: {
     retry: "Reintentar",
@@ -30,6 +35,11 @@ export const es: Messages = {
   },
   tasks: {
     heading: "Tareas",
+    favoritesHeading: "Favoritas",
+    favoritesEmpty: "Marca una tarea con la estrella para tenerla a mano.",
+    allFavorites: "Todas tus tareas están en favoritas.",
+    favorite: (title) => `Marcar como favorita: ${title}`,
+    unfavorite: (title) => `Quitar de favoritas: ${title}`,
     loading: "Cargando tareas…",
     syncing: "Sincronizando",
     empty: "Todavía no hay tareas. Añade la primera arriba.",
@@ -41,6 +51,8 @@ export const es: Messages = {
   announcements: {
     added: (title) => `Tarea añadida: ${title}`,
     deleted: (title) => `Tarea eliminada: ${title}`,
+    favorited: (title) => `Añadida a favoritas: ${title}`,
+    unfavorited: (title) => `Quitada de favoritas: ${title}`,
   },
   errors: {
     network: "No se ha podido conectar con el servidor. Comprueba que la API está en marcha.",

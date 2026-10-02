@@ -21,6 +21,11 @@ export const en = {
     label: "New task",
     placeholder: "Describe the next item to inspect…",
     submit: "Add",
+    descriptionLabel: "Description",
+    descriptionPlaceholder: "Optional details: location, element, reference…",
+    descriptionAdd: "Add description",
+    descriptionRemove: "Remove description",
+    submitHint: "Ctrl + Enter to add",
   },
   actions: {
     retry: "Retry",
@@ -28,6 +33,11 @@ export const en = {
   },
   tasks: {
     heading: "Tasks",
+    favoritesHeading: "Favourites",
+    favoritesEmpty: "Mark a task with the star to keep it at hand.",
+    allFavorites: "All your tasks are in favourites.",
+    favorite: (title: string) => `Mark as favourite: ${title}`,
+    unfavorite: (title: string) => `Remove from favourites: ${title}`,
     loading: "Loading tasks…",
     syncing: "Syncing",
     empty: "No tasks yet. Add the first one above.",
@@ -39,6 +49,8 @@ export const en = {
   announcements: {
     added: (title: string) => `Task added: ${title}`,
     deleted: (title: string) => `Task deleted: ${title}`,
+    favorited: (title: string) => `Added to favourites: ${title}`,
+    unfavorited: (title: string) => `Removed from favourites: ${title}`,
   },
   errors: {
     network: "Could not reach the server. Check that the API is running.",
