@@ -36,7 +36,8 @@ Beyond the brief:
 
 - **Python 3.11–3.13**. Python 3.14 is not supported yet: the pinned `pydantic-core` has no
   pre-built packages for it.
-- **Node.js 20+** and npm.
+- **Node.js 22 LTS** and npm. The project is developed and tested with Node 22; older versions
+  may fail to install or run.
 
 ### 1. Backend
 
