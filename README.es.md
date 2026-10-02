@@ -20,7 +20,7 @@ bilingüe (español / inglés) y tests automáticos en ambas partes.
 | 1. Estado de completado guardado en el backend | `PATCH /todos/{id}`; el checkbox cambia al instante y vuelve atrás si falla el guardado |
 | 2. Borrar tareas | `DELETE /todos/{id}`; botón de papelera con confirmación en dos pasos, a prueba de dobles clics accidentales |
 | 3. Carga automática de tareas | La lista se carga al abrir la página y se recarga tras cada alta, borrado, completado o cambio de favorita |
-| 4. Descripciones y favoritas | Descripción opcional (hasta 500 caracteres) y botón de estrella; las favoritas se muestran en su propia sección, sin duplicados |
+| 4. Descripciones y favoritas | Descripción opcional (hasta 500 caracteres) y botón de estrella; las favoritas tienen su propia pestaña, junto a la lista completa, donde mantienen la estrella encendida |
 | 5. README | Este archivo, en español y en [inglés](README.md) |
 
 Además de lo que pide el enunciado:
@@ -31,7 +31,7 @@ Además de lo que pide el enunciado:
   un borrado.
 - **Accesibilidad**: HTML semántico, uso completo con teclado, foco visible, avisos para lectores
   de pantalla, contraste WCAG AA y respeto a la preferencia de *reducir movimiento*.
-- **Tests**: 55 tests de backend (pytest) y 47 de frontend (Vitest + Testing Library).
+- **Tests**: 55 tests de backend (pytest) y 49 de frontend (Vitest + Testing Library).
 
 ## Puesta en marcha
 
@@ -150,7 +150,7 @@ frontend/
     i18n/                    # Proveedor de idioma, detección y diccionarios ES/EN
     components/
       layout/                # Hoja, cabecera, cajetín, anillo de progreso
-      todo/                  # Formulario, secciones, lista, fila, controles de favorita y borrado
+      todo/                  # Formulario, lista, fila, controles de favorita y borrado
       ui/                    # Botón, checkbox, iconos, banderas, aviso de error, estado vacío
     test/                    # Configuración de tests y API falsa en memoria
     index.css                # Tokens de diseño (Tailwind v4 @theme) y animaciones

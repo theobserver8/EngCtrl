@@ -30,23 +30,26 @@ export async function renderApp({
       <App />
     </I18nProvider>,
   );
-  if (!offline && todos.length > 0) await screen.findByText(todos[0].title);
+  if (!offline && todos.length > 0) await within(visiblePanel()).findByText(todos[0].title);
 
   return { api, user };
 }
 
 /** The list item of a task, found by its title. */
 export function getRow(title: string): HTMLElement {
-  const row = screen.getByText(title).closest("li");
+  const row = within(visiblePanel()).getByText(title).closest("li");
   if (!row) throw new Error(`No row for "${title}"`);
   return row;
 }
 
-/** Titles of the rows inside the section whose heading starts with `heading`. */
-export function sectionTitles(heading: RegExp): string[] {
-  const section = screen.getByRole("heading", { name: heading }).closest("section");
-  if (!section) throw new Error(`No section ${heading}`);
-  return within(section)
+/** The panel of the selected view (the others are hidden). */
+export function visiblePanel(): HTMLElement {
+  return screen.getByRole("tabpanel");
+}
+
+/** Titles of the rows in the selected view. */
+export function visibleTitles(): string[] {
+  return within(visiblePanel())
     .queryAllByRole("listitem")
     .map((item) => item.querySelector("[id]")?.textContent ?? "");
 }

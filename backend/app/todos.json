@@ -5,7 +5,7 @@
       "title": "Learn React",
       "description": null,
       "completed": true,
-      "favorite": false,
+      "favorite": true,
       "id": 1
     },
     {
@@ -19,7 +19,7 @@
       "title": "Learn Vite",
       "description": null,
       "completed": false,
-      "favorite": false,
+      "favorite": true,
       "id": 3
     },
     {
@@ -32,22 +32,22 @@
     {
       "title": "Learn Docker",
       "description": null,
-      "completed": false,
-      "favorite": false,
+      "completed": true,
+      "favorite": true,
       "id": 5
     },
     {
       "title": "Learn PostgreSQL",
       "description": null,
       "completed": false,
-      "favorite": false,
+      "favorite": true,
       "id": 6
     },
     {
       "title": "Learn Tailwind CSS",
       "description": null,
       "completed": false,
-      "favorite": false,
+      "favorite": true,
       "id": 7
     }
   ]
