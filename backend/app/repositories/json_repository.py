@@ -29,7 +29,7 @@ class JsonTodoRepository(TodoRepository):
     Sync FastAPI endpoints run in a thread pool, so every read-modify-write cycle is
     serialized with a lock, and files are written atomically to avoid corrupting the
     data if the process stops halfway through a write. Legacy files (a plain list of
-    todos, with or without ids) are migrated on first read.
+    todos, records without ids or newer fields) are migrated on first read.
     """
 
     def __init__(self, path: Path) -> None:
@@ -111,9 +111,13 @@ class JsonTodoRepository(TodoRepository):
                 next_id += 1
                 migrated = True
             try:
-                todos.append(Todo.model_validate(item))
+                todo = Todo.model_validate(item)
             except ValidationError as exc:
                 raise StorageError(f"Invalid todo record in {self._path.name}") from exc
+            # Records written by older versions (e.g. without description/favorite) or edited
+            # by hand are rewritten in their normalized form.
+            migrated = migrated or item != todo.model_dump()
+            todos.append(todo)
         return _Store(todos=todos, next_id=next_id), migrated
 
     def _save(self, store: _Store) -> None:
