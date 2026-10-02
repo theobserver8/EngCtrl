@@ -35,6 +35,7 @@ export const es: Messages = {
     empty: "Todavía no hay tareas. Añade la primera arriba.",
     delete: (title) => `Eliminar tarea: ${title}`,
     confirmDelete: (title) => `Confirmar eliminación de la tarea: ${title}`,
+    cancelDelete: (title) => `Cancelar eliminación de la tarea: ${title}`,
     confirmDeleteShort: "¿Borrar?",
   },
   announcements: {

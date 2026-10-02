@@ -1,7 +1,7 @@
 import { formatReference } from "../../utils/format";
 import type { Todo } from "../../types/todo";
 import Checkbox from "../ui/Checkbox";
-import DeleteTodoButton from "./DeleteTodoButton";
+import DeleteTodoControls from "./DeleteTodoControls";
 
 interface TodoItemProps {
   todo: Todo;
@@ -35,11 +35,12 @@ function TodoItem({ todo, isPending = false, onToggle, onDelete }: TodoItemProps
           >
             {todo.title}
           </span>
-          <span className="font-mono text-[11px] text-ink-faint tabular-nums">
+        </label>
+        <DeleteTodoControls title={todo.title} onConfirm={() => onDelete(todo)}>
+          <span className="ml-1 font-mono text-[11px] text-ink-faint tabular-nums">
             {formatReference(todo.id)}
           </span>
-        </label>
-        <DeleteTodoButton title={todo.title} onConfirm={() => onDelete(todo)} />
+        </DeleteTodoControls>
       </div>
     </li>
   );

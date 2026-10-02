@@ -71,6 +71,14 @@
   mask-image: radial-gradient(ellipse 80% 70% at 50% 30%, #000 40%, transparent 100%);
 }
 
+/* Delete confirmation entering from the right, next to the reference code. */
+@keyframes confirm-in {
+  from {
+    opacity: 0;
+    transform: translateX(6px);
+  }
+}
+
 /* Section/metadata label, like the annotations of a technical drawing. */
 @utility label-mono {
   @apply font-mono text-[11px] font-medium tracking-[0.14em] text-ink-soft uppercase tabular-nums;

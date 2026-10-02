@@ -33,6 +33,7 @@ export const en = {
     empty: "No tasks yet. Add the first one above.",
     delete: (title: string) => `Delete task: ${title}`,
     confirmDelete: (title: string) => `Confirm deletion of task: ${title}`,
+    cancelDelete: (title: string) => `Cancel deletion of task: ${title}`,
     confirmDeleteShort: "Delete?",
   },
   announcements: {
