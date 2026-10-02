@@ -12,7 +12,7 @@ function Checkbox({ className = "", ...props }: CheckboxProps) {
         className="peer focus-ring size-5 cursor-pointer appearance-none rounded-[5px] border-[1.5px] border-ink-faint/70 bg-sheet transition-colors duration-150 checked:border-brand checked:bg-brand hover:border-brand disabled:cursor-not-allowed"
         {...props}
       />
-      <CheckIcon className="pointer-events-none absolute size-3.5 text-white opacity-0 transition-opacity duration-150 peer-checked:opacity-100" />
+      <CheckIcon className="check-ink pointer-events-none absolute size-3.5 text-white" />
     </span>
   );
 }

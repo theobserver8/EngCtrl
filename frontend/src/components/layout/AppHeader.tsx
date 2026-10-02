@@ -19,14 +19,14 @@ function AppHeader({ total, completed }: AppHeaderProps) {
         <LanguageSwitcher />
       </div>
 
-      <div className="mt-4 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-[2rem] leading-none font-semibold tracking-tight text-ink sm:text-[2.25rem]">
-            {t.header.title}
-          </h1>
-          <p className="mt-2.5 text-sm text-ink-soft">{t.header.subtitle}</p>
-        </div>
+      <div className="mt-4">
+        <h1 className="text-[2rem] leading-none font-semibold tracking-tight text-ink sm:text-[2.25rem]">
+          {t.header.title}
+        </h1>
+        <p className="mt-2.5 text-sm text-ink-soft">{t.header.subtitle}</p>
+      </div>
 
+      <div className="mt-7">
         <TitleBlock total={total} completed={completed} />
       </div>
     </header>

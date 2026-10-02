@@ -33,7 +33,7 @@ export function PlusIcon(props: IconProps) {
 export function CheckIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <path d="M3.5 8.5l3 3 6-7" />
+      <path d="M3.5 8.5l3 3 6-7" pathLength={1} />
     </Icon>
   );
 }

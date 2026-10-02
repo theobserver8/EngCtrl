@@ -14,6 +14,10 @@ export const en = {
     done: "Done",
     open: "Open",
   },
+  progress: {
+    label: "Completion",
+    value: (percent: number) => `${percent}% of tasks completed`,
+  },
   language: {
     label: "Language",
   },
@@ -41,6 +45,7 @@ export const en = {
     loading: "Loading tasks…",
     syncing: "Syncing",
     empty: "No tasks yet. Add the first one above.",
+    unavailable: "The register could not be loaded.",
     delete: (title: string) => `Delete task: ${title}`,
     confirmDelete: (title: string) => `Confirm deletion of task: ${title}`,
     cancelDelete: (title: string) => `Cancel deletion of task: ${title}`,

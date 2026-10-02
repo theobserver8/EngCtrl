@@ -5,6 +5,7 @@ import TodoForm from "./components/todo/TodoForm";
 import TodoList from "./components/todo/TodoList";
 import TodoListSkeleton from "./components/todo/TodoListSkeleton";
 import TodoSection from "./components/todo/TodoSection";
+import EmptyState from "./components/ui/EmptyState";
 import ErrorBanner from "./components/ui/ErrorBanner";
 import { useTodos } from "./hooks/useTodos";
 import { useI18n } from "./i18n/useI18n";
@@ -48,13 +49,16 @@ function App() {
     setFocusFavoriteId(todo.id);
     if (await toggleFavorite(todo)) {
       setAnnouncement(
-        todo.favorite ? t.announcements.unfavorited(todo.title) : t.announcements.favorited(todo.title),
+        todo.favorite
+          ? t.announcements.unfavorited(todo.title)
+          : t.announcements.favorited(todo.title),
       );
     }
   };
 
   const handleDelete = async (todo: Todo) => {
-    if (await deleteTodo(todo)) setAnnouncement(t.announcements.deleted(todo.title));
+    if (await deleteTodo(todo))
+      setAnnouncement(t.announcements.deleted(todo.title));
   };
 
   const listProps = {
@@ -77,7 +81,10 @@ function App() {
 
   return (
     <div className="relative min-h-dvh overflow-x-clip">
-      <div aria-hidden="true" className="blueprint-grid pointer-events-none fixed inset-0" />
+      <div
+        aria-hidden="true"
+        className="blueprint-grid pointer-events-none fixed inset-0"
+      />
 
       <main className="relative mx-auto w-full max-w-3xl px-4 py-10 sm:px-6 sm:py-16">
         <Sheet>
@@ -110,7 +117,9 @@ function App() {
                 {favorites.length > 0 ? (
                   <TodoList todos={favorites} {...listProps} />
                 ) : (
-                  <p className="py-4 text-[13px] text-ink-faint">{t.tasks.favoritesEmpty}</p>
+                  <p className="py-4 text-[13px] text-ink-faint">
+                    {t.tasks.favoritesEmpty}
+                  </p>
                 )}
               </TodoSection>
             )}
@@ -121,14 +130,23 @@ function App() {
               aside={loaded && todos.length > 0 ? null : syncIndicator}
               className="mt-10"
             >
-              {status === "loading" && <TodoListSkeleton label={t.tasks.loading} />}
+              {status === "loading" && (
+                <TodoListSkeleton label={t.tasks.loading} />
+              )}
+              {loadFailed && (
+                <p className="py-8 text-center text-sm text-ink-faint">
+                  {t.tasks.unavailable}
+                </p>
+              )}
               {loaded &&
                 (others.length > 0 ? (
                   <TodoList todos={others} {...listProps} />
-                ) : (
+                ) : todos.length > 0 ? (
                   <p className="py-8 text-center text-sm text-ink-faint">
-                    {todos.length > 0 ? t.tasks.allFavorites : t.tasks.empty}
+                    {t.tasks.allFavorites}
                   </p>
+                ) : (
+                  <EmptyState message={t.tasks.empty} />
                 ))}
             </TodoSection>
           </div>

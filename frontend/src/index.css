@@ -15,7 +15,7 @@
   /* Text */
   --color-ink: #2f3734;
   --color-ink-soft: #5c6561;
-  --color-ink-faint: #8a928e;
+  --color-ink-faint: #6b7470; /* 4.8:1 on white: WCAG AA for small text */
 
   /* Corporate */
   --color-brand: #005db9;
@@ -76,6 +76,50 @@
   from {
     opacity: 0;
     transform: translateX(6px);
+  }
+}
+
+/* Rows fade in with a small rise (new tasks, tasks moving between sections). */
+@keyframes row-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+/* "Inked" check: the tick is drawn when the box is checked (path uses pathLength="1"). */
+.check-ink path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 220ms var(--ease-out-soft) 60ms;
+}
+.peer:checked ~ .check-ink path {
+  stroke-dashoffset: 0;
+}
+
+/* Strike-through drawn from left to right, line by line, instead of appearing at once. */
+.strike {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position: 0 58%;
+  background-size: 0% 1px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  transition: background-size 320ms var(--ease-out-soft);
+}
+.strike[data-struck="true"] {
+  background-size: 100% 1px;
+}
+
+/* Respect the OS setting: no movement, state changes still visible instantly. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
   }
 }
 

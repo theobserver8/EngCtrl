@@ -16,6 +16,10 @@ export const es: Messages = {
     done: "Hechas",
     open: "Abiertas",
   },
+  progress: {
+    label: "Progreso",
+    value: (percent) => `${percent} % de las tareas completadas`,
+  },
   language: {
     label: "Idioma",
   },
@@ -43,6 +47,7 @@ export const es: Messages = {
     loading: "Cargando tareas…",
     syncing: "Sincronizando",
     empty: "Todavía no hay tareas. Añade la primera arriba.",
+    unavailable: "No se ha podido cargar el registro.",
     delete: (title) => `Eliminar tarea: ${title}`,
     confirmDelete: (title) => `Confirmar eliminación de la tarea: ${title}`,
     cancelDelete: (title) => `Cancelar eliminación de la tarea: ${title}`,
