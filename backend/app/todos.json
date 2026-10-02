@@ -26,14 +26,14 @@
       "title": "Learn FastAPI",
       "description": null,
       "completed": false,
-      "favorite": true,
+      "favorite": false,
       "id": 4
     },
     {
       "title": "Learn Docker",
       "description": null,
       "completed": true,
-      "favorite": true,
+      "favorite": false,
       "id": 5
     },
     {

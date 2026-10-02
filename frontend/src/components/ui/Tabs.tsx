@@ -219,8 +219,8 @@ function TabButton<T extends string>({ tab, id, panelId, isSelected, onSelect, b
       tabIndex={isSelected ? 0 : -1}
       onClick={() => onSelect(tab.id)}
       // -mb-px: the selected tab covers the frame's top border, opening the folder into its panel.
-      className={`focus-ring relative -mb-px flex h-10 cursor-pointer items-center rounded-t-control border border-b-0 px-3 font-mono text-[11px] font-medium tracking-[0.14em] whitespace-nowrap uppercase tabular-nums transition-colors duration-(--motion-base) sm:px-4 ${
-        isSelected ? "z-10 border-line bg-sheet text-ink" : "border-transparent text-ink-faint hover:text-ink-soft"
+      className={`group focus-ring relative -mb-px flex h-10 cursor-pointer items-center rounded-t-control border border-b-0 px-3 font-mono text-[11px] font-medium tracking-[0.14em] whitespace-nowrap uppercase tabular-nums transition-colors duration-(--motion-base) sm:px-4 ${
+        isSelected ? "z-10 border-line bg-sheet text-ink" : "border-transparent text-ink-faint hover:bg-brand-soft/60 hover:text-ink"
       }`}
     >
       {change && (
@@ -236,8 +236,9 @@ function TabButton<T extends string>({ tab, id, panelId, isSelected, onSelect, b
       )}
       <span
         aria-hidden="true"
-        className={`absolute inset-x-3 -top-px h-0.5 rounded-full bg-brand transition-transform duration-(--motion-base) ease-out-soft ${
-          isSelected ? "scale-x-100" : "scale-x-0"
+        // On hover over an unselected tab it shows faintly and half-grown: a preview of the selection.
+        className={`absolute inset-x-3 -top-px h-0.5 rounded-full bg-brand transition-[transform,opacity] duration-(--motion-base) ease-out-soft ${
+          isSelected ? "scale-x-100" : "scale-x-0 opacity-40 group-hover:scale-x-50"
         }`}
       />
       <span className="relative flex items-center gap-2">
