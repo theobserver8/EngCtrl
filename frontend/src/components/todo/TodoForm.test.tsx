@@ -53,6 +53,7 @@ describe("TodoForm", () => {
     await user.click(screen.getByRole("button", { name: "Add description" }));
     await user.type(screen.getByLabelText("Description"), "Draft");
     await user.click(screen.getByRole("button", { name: "Remove description" }));
+    expect(screen.getByRole("button", { name: "Add description" })).toHaveFocus();
     await user.type(screen.getByLabelText("New task"), "Title{Enter}");
 
     expect(onSubmit).toHaveBeenCalledWith({ title: "Title", description: "" });
