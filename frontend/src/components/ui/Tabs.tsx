@@ -43,9 +43,10 @@ interface TabsProps<T extends string> {
 /**
  * Folder-style tabs over a hairline-framed panel. Follows the WAI-ARIA tabs pattern with
  * automatic activation: arrow keys, Home and End move between tabs.
- * Every panel stays mounted (inactive ones `hidden`) so rows keep their state and do not replay
- * their entrance animation when the user switches views. The frame resizes smoothly from the
- * height of one view to the other, so a long list opens as gently as a short one.
+ * Every panel stays mounted so rows keep their state. Inactive panels are taken out of the flow
+ * and made invisible rather than `display: none`, which would replay every entrance animation
+ * inside them each time they are shown. Switching crossfades both views while the frame resizes
+ * from one height to the other, so rows present in both never blink.
  */
 function Tabs<T extends string>({ label, tabs, selected, onSelect, aside, ref }: TabsProps<T>) {
   const baseId = useId();
@@ -54,14 +55,21 @@ function Tabs<T extends string>({ label, tabs, selected, onSelect, aside, ref }:
   const tabId = (id: T) => `${baseId}-tab-${id}`;
   const panelId = (id: T) => `${baseId}-panel-${id}`;
   const frameRef = useRef<HTMLDivElement>(null);
+  const panelRefs = useRef(new Map<T, HTMLDivElement>());
+  // View being faded out: kept visible on top of the incoming one until the switch ends.
+  const [outgoing, setOutgoing] = useState<T | null>(null);
   // Height of the frame right before a switch, animated to the new view's height after render.
   const switchFromHeight = useRef<number | null>(null);
-  const resize = useRef<Animation | null>(null);
+  const running = useRef<Animation[]>([]);
 
   const select = (id: T) => {
     if (id === selected) return;
-    // Measured mid-animation too, so quick successive switches continue from where they are.
-    switchFromHeight.current = frameRef.current?.getBoundingClientRect().height ?? null;
+    const frame = frameRef.current;
+    if (frame && typeof frame.animate === "function" && !prefersReducedMotion()) {
+      // Measured mid-switch too, so quick successive switches continue from where they are.
+      switchFromHeight.current = frame.getBoundingClientRect().height;
+      setOutgoing(selected);
+    }
     onSelect(id);
   };
 
@@ -70,16 +78,28 @@ function Tabs<T extends string>({ label, tabs, selected, onSelect, aside, ref }:
     const from = switchFromHeight.current;
     switchFromHeight.current = null;
     if (!frame || from === null) return;
-    resize.current?.cancel();
+    const incoming = panelRefs.current.get(selected);
+    const leaving = outgoing === null ? undefined : panelRefs.current.get(outgoing);
+    // A switch interrupted midway continues from the current opacities instead of jumping.
+    const interrupted = running.current.some((animation) => animation.playState === "running");
+    const opacityOf = (panel: HTMLElement | undefined, fallback: number) =>
+      interrupted && panel ? Number(getComputedStyle(panel).opacity) : fallback;
+    const inFrom = opacityOf(incoming, 0);
+    const outFrom = opacityOf(leaving, 1);
+    running.current.forEach((animation) => animation.cancel());
+
+    const timing: KeyframeAnimationOptions = { duration: MOTION_MS.view, easing: EASE_IN_OUT_SOFT };
     const to = frame.getBoundingClientRect().height;
-    if (from === to || prefersReducedMotion() || typeof frame.animate !== "function") return;
-    resize.current = frame.animate(
-      [
-        { height: `${from}px`, overflow: "clip" },
-        { height: `${to}px`, overflow: "clip" },
-      ],
-      { duration: MOTION_MS.slow, easing: EASE_IN_OUT_SOFT },
-    );
+    const resize = frame.animate([{ height: `${from}px` }, { height: `${to}px` }], timing);
+    const fadeIn = incoming?.animate([{ opacity: inFrom }, { opacity: 1 }], timing);
+    // Holds opacity 0 until the next switch cancels it: the panel is only made invisible on the
+    // next render, and without the fill it would flash fully opaque for a frame in between.
+    const fadeOut = leaving?.animate([{ opacity: outFrom }, { opacity: 0 }], { ...timing, fill: "forwards" });
+    running.current = [resize, fadeIn, fadeOut].filter((animation) => animation !== undefined);
+    // Cancelled (another switch started) also rejects `finished`: only a completed switch clears it.
+    resize.finished.then(() => setOutgoing(null), () => undefined);
+    // Runs only when the selection changes; `outgoing` is set in the same update.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected]);
 
   useImperativeHandle(
@@ -127,24 +147,34 @@ function Tabs<T extends string>({ label, tabs, selected, onSelect, aside, ref }:
       </div>
 
       {/* The corner under the first tab stays square so the tab flows into the frame. */}
+      {/* Clipped: the inactive panels lie (invisible) on top of the active one and may be taller. */}
       <div
         ref={frameRef}
-        className={`rounded-control border border-line ${selectedIndex === 0 ? "rounded-tl-none" : ""}`}
+        className={`relative overflow-clip rounded-control border border-line ${selectedIndex === 0 ? "rounded-tl-none" : ""}`}
       >
-        {tabs.map((tab) => (
-          <div
-            key={tab.id}
-            role="tabpanel"
-            id={panelId(tab.id)}
-            aria-labelledby={tabId(tab.id)}
-            hidden={tab.id !== selected}
-            // The fade replays every time the panel is shown again (display: none -> block),
-            // timed with the frame's resize.
-            className="px-4 motion-safe:animate-[fade-in_var(--motion-slow)_var(--ease-out-soft)] sm:px-5"
-          >
-            {tab.panel}
-          </div>
-        ))}
+        {tabs.map((tab) => {
+          const isSelected = tab.id === selected;
+          const isOutgoing = tab.id === outgoing;
+          return (
+            <div
+              key={tab.id}
+              ref={(node) => {
+                if (node) panelRefs.current.set(tab.id, node);
+                else panelRefs.current.delete(tab.id);
+              }}
+              role="tabpanel"
+              id={panelId(tab.id)}
+              aria-labelledby={tabId(tab.id)}
+              aria-hidden={isSelected ? undefined : true}
+              inert={!isSelected}
+              // Inline style (not a class) so the visibility also applies where no CSS is loaded (tests).
+              style={isSelected || isOutgoing ? undefined : { visibility: "hidden" }}
+              className={`px-4 sm:px-5 ${isSelected ? "" : "absolute inset-x-0 top-0"}`}
+            >
+              {tab.panel}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
