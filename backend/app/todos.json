@@ -1,5 +1,5 @@
 {
-  "next_id": 17,
+  "next_id": 9,
   "todos": [
     {
       "title": "Learn React",
@@ -12,21 +12,21 @@
       "title": "Learn TypeScript",
       "description": null,
       "completed": true,
-      "favorite": false,
+      "favorite": true,
       "id": 2
     },
     {
       "title": "Learn Vite",
       "description": null,
-      "completed": true,
-      "favorite": true,
+      "completed": false,
+      "favorite": false,
       "id": 3
     },
     {
       "title": "Learn FastAPI",
       "description": null,
       "completed": false,
-      "favorite": false,
+      "favorite": true,
       "id": 4
     },
     {
@@ -47,7 +47,7 @@
       "title": "Learn Tailwind CSS",
       "description": null,
       "completed": false,
-      "favorite": true,
+      "favorite": false,
       "id": 7
     }
   ]

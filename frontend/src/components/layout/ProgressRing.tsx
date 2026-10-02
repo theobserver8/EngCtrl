@@ -1,4 +1,5 @@
 import { useI18n } from "../../i18n/useI18n";
+import RollingNumber from "../ui/RollingNumber";
 
 const SEGMENTS = 12;
 const SIZE = 64;
@@ -24,13 +25,15 @@ const PATHS = Array.from({ length: SEGMENTS }, (_, index) => segmentPath(index))
 interface ProgressRingProps {
   completed: number;
   total: number;
+  /** False until the first load ends: the percentage does not roll on the first load. */
+  ready?: boolean;
 }
 
 /**
  * Completion gauge echoing the segmented "o" of the CEMOSA logo: segments fill in lime,
  * one after another, as tasks are completed.
  */
-function ProgressRing({ completed, total }: ProgressRingProps) {
+function ProgressRing({ completed, total, ready = true }: ProgressRingProps) {
   const { t } = useI18n();
   const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
   const filled = total === 0 ? 0 : Math.round((completed / total) * SEGMENTS);
@@ -59,7 +62,7 @@ function ProgressRing({ completed, total }: ProgressRingProps) {
         ))}
       </svg>
       <span className="font-mono text-[12px] font-medium text-ink tabular-nums" aria-hidden="true">
-        {percent}
+        <RollingNumber value={percent} ready={ready} />
         <span className="text-[9px] text-ink-faint">%</span>
       </span>
     </div>

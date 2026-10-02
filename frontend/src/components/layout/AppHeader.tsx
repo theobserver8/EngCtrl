@@ -5,9 +5,11 @@ import TitleBlock from "./TitleBlock";
 interface AppHeaderProps {
   total: number;
   completed: number;
+  /** False until the first load ends (see TitleBlock). */
+  ready?: boolean;
 }
 
-function AppHeader({ total, completed }: AppHeaderProps) {
+function AppHeader({ total, completed, ready = true }: AppHeaderProps) {
   const { t } = useI18n();
 
   return (
@@ -27,7 +29,7 @@ function AppHeader({ total, completed }: AppHeaderProps) {
       </div>
 
       <div className="mt-7">
-        <TitleBlock total={total} completed={completed} />
+        <TitleBlock total={total} completed={completed} ready={ready} />
       </div>
     </header>
   );

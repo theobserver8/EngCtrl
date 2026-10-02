@@ -10,6 +10,7 @@ import {
 } from "react";
 import { formatCount } from "../../utils/format";
 import { MOTION_MS, prefersReducedMotion } from "../../utils/motion";
+import RollingNumber from "./RollingNumber";
 
 // Mirrors --ease-in-out-soft in index.css (Web Animations take the curve, not the variable).
 const EASE_IN_OUT_SOFT = "cubic-bezier(0.65, 0, 0.35, 1)";
@@ -190,7 +191,7 @@ interface TabButtonProps<T extends string> {
 }
 
 interface CountChange {
-  /** Increments on every change: used as a React key to restart the animations. */
+  /** Increments on every change: used as a React key to restart the signal. */
   key: number;
   direction: "up" | "down";
 }
@@ -255,19 +256,7 @@ function TabButton<T extends string>({ tab, id, panelId, isSelected, onSelect, b
           // The space is ignored by the flex layout (gap spaces it) but keeps the accessible name readable.
           <span className="flex overflow-hidden motion-safe:animate-[fade-in_var(--motion-base)_var(--ease-out-soft)]">
             {" "}·&nbsp;
-            <span
-              key={change?.key}
-              // Rolls in from the direction of the change, like a mechanical counter.
-              className={
-                change === null
-                  ? undefined
-                  : change.direction === "up"
-                    ? "motion-safe:animate-[count-up_var(--motion-gentle)_var(--ease-in-out-soft)]"
-                    : "motion-safe:animate-[count-down_var(--motion-gentle)_var(--ease-in-out-soft)]"
-              }
-            >
-              {formatCount(count)}
-            </span>
+            <RollingNumber value={count} format={formatCount} />
           </span>
         )}
       </span>

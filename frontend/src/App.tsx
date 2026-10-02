@@ -113,7 +113,7 @@ function App() {
 
       <main className="relative mx-auto w-full max-w-3xl px-4 py-10 sm:px-6 sm:py-16">
         <Sheet>
-          <AppHeader total={todos.length} completed={completedCount} />
+          <AppHeader total={todos.length} completed={completedCount} ready={loaded} />
 
           <div className="mt-10">
             <TodoForm onSubmit={handleAdd} isSubmitting={isCreating} />
