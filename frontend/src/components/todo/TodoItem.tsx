@@ -63,7 +63,9 @@ function TodoItem({
     <li
       aria-busy={isPending}
       inert={leaving}
-      className={`grid transition-[grid-template-rows,opacity] duration-(--motion-slow) ease-in-out-soft ${
+      // minmax(0, 1fr) keeps the column at the list's width: an auto column would grow to the
+      // longest unbroken word of the title or description and push the row out of the frame.
+      className={`grid grid-cols-[minmax(0,1fr)] transition-[grid-template-rows,opacity] duration-(--motion-slow) ease-in-out-soft ${
         enterAnimated ? "motion-safe:animate-[row-in_var(--motion-slow)_var(--ease-in-out-soft)]" : ""
       } ${
         leaving

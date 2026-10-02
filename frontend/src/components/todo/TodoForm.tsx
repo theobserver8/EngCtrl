@@ -107,7 +107,7 @@ function TodoForm({ onSubmit, isSubmitting = false }: TodoFormProps) {
           The delays only apply on the way into each state. */}
       <div
         inert={showDescription}
-        className={`grid transition-[grid-template-rows,opacity] ease-in-out-soft ${
+        className={`grid grid-cols-[minmax(0,1fr)] transition-[grid-template-rows,opacity] ease-in-out-soft ${
           showDescription
             ? "grid-rows-[0fr] opacity-0 duration-(--motion-slow)"
             : "grid-rows-[1fr] opacity-100 delay-200 duration-(--motion-gentle)"
@@ -131,7 +131,9 @@ function TodoForm({ onSubmit, isSubmitting = false }: TodoFormProps) {
 
       <div
         inert={!showDescription}
-        className={`grid transition-[grid-template-rows] duration-(--motion-gentle) ease-in-out-soft ${
+        // minmax(0, 1fr): without it the column grows to the field's min-content width, which
+        // with field-sizing: content is the longest unbroken word (it would overflow the form).
+        className={`grid grid-cols-[minmax(0,1fr)] transition-[grid-template-rows] duration-(--motion-gentle) ease-in-out-soft ${
           showDescription ? "grid-rows-[1fr]" : "grid-rows-[0fr] delay-150"
         }`}
       >
@@ -172,7 +174,7 @@ function TodoForm({ onSubmit, isSubmitting = false }: TodoFormProps) {
               placeholder={t.form.descriptionPlaceholder}
               maxLength={TODO_LIMITS.descriptionMaxLength}
               rows={2}
-              className={`mt-1 block max-h-40 min-h-16 resize-none py-2 text-sm leading-relaxed field-sizing-content ${FIELD_CLASSES}`}
+              className={`mt-1 block max-h-40 min-h-16 resize-none py-2 text-sm leading-relaxed break-words field-sizing-content ${FIELD_CLASSES}`}
             />
             <p className="mt-1.5 font-mono text-[10px] tracking-[0.08em] text-ink-faint">
               {t.form.submitHint}
