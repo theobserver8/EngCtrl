@@ -17,7 +17,7 @@ function LanguageSwitcher() {
       role="group"
       aria-label={t.language.label}
       // Equal-width columns so a single highlight can slide between the options.
-      className="relative grid grid-cols-2 gap-0.5 rounded-full border border-line bg-sheet p-0.5"
+      className="relative grid grid-cols-2 gap-0.5 rounded-full border border-line bg-sheet p-0.5 [view-transition-name:language-switcher]"
     >
       <span
         aria-hidden="true"

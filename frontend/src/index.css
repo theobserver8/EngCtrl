@@ -105,6 +105,28 @@
   }
 }
 
+/* Language change (View Transitions API): a crossfade of the whole page. Unchanged pixels stay
+   put because both snapshots' opacities always add up to 1 (plus-lighter blend), so only the
+   texts are seen changing. That is also why the old text cannot fade out before the new one
+   starts (the whole page would dim): instead, a fast-start curve makes the old text give way
+   almost at once, keeping the overlap short, and the new one settles calmly. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--motion-gentle);
+  animation-timing-function: var(--ease-out-soft);
+}
+
+/* The language switcher keeps its own sliding highlight instead of being crossfaded. */
+::view-transition-group(language-switcher) {
+  animation: none;
+}
+::view-transition-old(language-switcher) {
+  display: none;
+}
+::view-transition-new(language-switcher) {
+  animation: none;
+}
+
 /* Activity on a tab: a wash that fades out, lime when something was added, grey when removed. */
 @keyframes signal-add {
   from {
