@@ -49,10 +49,16 @@
     --motion-fast: 200ms; /* colours, hovers, small state changes */
     --motion-base: 320ms; /* elements entering or leaving */
     --motion-slow: 450ms; /* layout changes: rows opening/closing, sliding indicators */
+    --motion-view: 550ms; /* switching between views: crossfade + frame resize */
+    --motion-gentle: 650ms; /* unhurried feedback: tab hover, counters rolling */
+    --motion-signal: 2400ms; /* attention signals that fade out slowly (tab activity) */
   }
 
   html {
     color-scheme: light;
+    /* Reserve the scrollbar's space: when the list loads and the page starts scrolling, the
+       centred sheet does not shift sideways. */
+    scrollbar-gutter: stable;
     -webkit-text-size-adjust: 100%;
   }
 
@@ -96,6 +102,32 @@
   from {
     opacity: 0;
     transform: translateY(-3px);
+  }
+}
+
+/* Activity on a tab: a wash that fades out, lime when something was added, grey when removed. */
+@keyframes signal-add {
+  from {
+    background-color: color-mix(in oklab, var(--color-lime) 60%, transparent);
+  }
+}
+@keyframes signal-remove {
+  from {
+    background-color: var(--color-line);
+  }
+}
+
+/* Counters roll in from the direction of the change, like a mechanical counter. */
+@keyframes count-up {
+  from {
+    opacity: 0;
+    transform: translateY(80%);
+  }
+}
+@keyframes count-down {
+  from {
+    opacity: 0;
+    transform: translateY(-80%);
   }
 }
 

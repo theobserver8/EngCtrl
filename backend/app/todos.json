@@ -4,35 +4,35 @@
     {
       "title": "Learn React",
       "description": null,
-      "completed": true,
+      "completed": false,
       "favorite": false,
       "id": 1
     },
     {
       "title": "Learn TypeScript",
       "description": null,
-      "completed": true,
-      "favorite": false,
+      "completed": false,
+      "favorite": true,
       "id": 2
     },
     {
       "title": "Learn Vite",
       "description": null,
       "completed": false,
-      "favorite": false,
+      "favorite": true,
       "id": 3
     },
     {
       "title": "Learn FastAPI",
       "description": null,
-      "completed": false,
-      "favorite": false,
+      "completed": true,
+      "favorite": true,
       "id": 4
     },
     {
       "title": "Learn Docker",
       "description": null,
-      "completed": false,
+      "completed": true,
       "favorite": false,
       "id": 5
     },
@@ -47,7 +47,7 @@
       "title": "Learn Tailwind CSS",
       "description": null,
       "completed": false,
-      "favorite": false,
+      "favorite": true,
       "id": 7
     }
   ]

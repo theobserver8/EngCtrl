@@ -1,6 +1,6 @@
 import { act, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { getRow, renderApp, sectionTitles } from "./test/renderApp";
+import { getRow, renderApp, visiblePanel, visibleTitles } from "./test/renderApp";
 
 const GUARD_MS = 450; // the delete confirmation ignores activations for 400 ms
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -13,11 +13,30 @@ describe("loading (task 3)", () => {
     expect(screen.queryByRole("button", { name: /load tasks/i })).not.toBeInTheDocument();
   });
 
-  it("shows favourites in their own section, without duplicates (task 4)", async () => {
-    await renderApp();
+  it("shows every task, and the favourites in their own view (task 4)", async () => {
+    const { user } = await renderApp();
 
-    expect(sectionTitles(/favourites/i)).toEqual(["Check rebar"]);
-    expect(sectionTitles(/^tasks/i)).toEqual(["Inspect formwork", "Concrete test"]);
+    expect(screen.getByRole("tab", { name: /tasks · 03/i })).toHaveAttribute("aria-selected", "true");
+    expect(visibleTitles()).toEqual(["Inspect formwork", "Concrete test", "Check rebar"]);
+
+    await user.click(screen.getByRole("tab", { name: /favourites · 01/i }));
+
+    expect(screen.getByRole("tab", { name: /favourites/i })).toHaveAttribute("aria-selected", "true");
+    expect(visibleTitles()).toEqual(["Check rebar"]);
+  });
+
+  it("switches views with the arrow keys", async () => {
+    const { user } = await renderApp();
+
+    await user.click(screen.getByRole("tab", { name: /tasks/i }));
+    await user.keyboard("{ArrowRight}");
+
+    expect(screen.getByRole("tab", { name: /favourites/i })).toHaveFocus();
+    expect(visibleTitles()).toEqual(["Check rebar"]);
+
+    await user.keyboard("{ArrowRight}");
+
+    expect(screen.getByRole("tab", { name: /tasks/i })).toHaveFocus();
   });
 
   it("shows task descriptions (task 4)", async () => {
@@ -36,7 +55,7 @@ describe("loading (task 3)", () => {
     const { api, user } = await renderApp({ offline: true });
 
     expect(await screen.findByRole("alert")).toHaveTextContent(/could not reach the server/i);
-    expect(screen.getByText(/could not be loaded/i)).toBeInTheDocument();
+    expect(within(visiblePanel()).getByText(/could not be loaded/i)).toBeInTheDocument();
 
     api.state.offline = false;
     await user.click(screen.getByRole("button", { name: "Retry" }));
@@ -136,21 +155,41 @@ describe("overlapping actions", () => {
 });
 
 describe("favourites (task 4)", () => {
-  it("moves a task to the favourites section and back", async () => {
+  it("keeps a new favourite among the tasks and adds it to the favourites view", async () => {
     const { api, user } = await renderApp();
 
     await user.click(screen.getByRole("button", { name: "Mark as favourite: Inspect formwork" }));
 
-    await waitFor(() => expect(sectionTitles(/favourites/i)).toEqual(["Inspect formwork", "Check rebar"]));
+    expect(await screen.findByRole("tab", { name: /favourites · 02/i })).toBeInTheDocument();
     expect(api.mutations("PATCH")[0].body).toEqual({ favorite: true });
+    expect(visibleTitles()).toEqual(["Inspect formwork", "Concrete test", "Check rebar"]);
     expect(screen.getByRole("button", { name: "Remove from favourites: Inspect formwork" })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
 
-    await user.click(screen.getByRole("button", { name: "Remove from favourites: Inspect formwork" }));
+    await user.click(screen.getByRole("tab", { name: /favourites/i }));
 
-    await waitFor(() => expect(sectionTitles(/favourites/i)).toEqual(["Check rebar"]));
+    expect(visibleTitles()).toEqual(["Inspect formwork", "Check rebar"]);
+  });
+
+  it("removes a task from the favourites view when it is unmarked there", async () => {
+    const { user } = await renderApp();
+    await user.click(screen.getByRole("tab", { name: /favourites/i }));
+
+    await user.click(screen.getByRole("button", { name: "Remove from favourites: Check rebar" }));
+
+    await waitFor(() => expect(visibleTitles()).toEqual([]));
+    expect(screen.getByText(/mark a task with the star/i)).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /favourites · 00/i })).toHaveFocus();
+
+    await user.click(screen.getByRole("tab", { name: /tasks/i }));
+
+    expect(visibleTitles()).toEqual(["Inspect formwork", "Concrete test", "Check rebar"]);
+    expect(screen.getByRole("button", { name: "Mark as favourite: Check rebar" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
   });
 });
 
@@ -243,7 +282,7 @@ describe("deleting tasks (task 2)", () => {
     await user.click(screen.getByRole("button", { name: "Confirm deletion of task: Inspect formwork" }));
 
     expect(await screen.findByRole("alert")).toBeInTheDocument();
-    expect(sectionTitles(/^tasks/i)).toEqual(["Inspect formwork", "Concrete test"]);
+    expect(visibleTitles()).toEqual(["Inspect formwork", "Concrete test", "Check rebar"]);
   });
 });
 

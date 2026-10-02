@@ -12,8 +12,8 @@ interface TodoItemProps {
   onToggle: (todo: Todo) => void;
   onToggleFavorite: (todo: Todo) => void;
   onDelete: (todo: Todo) => void;
-  /** Focus the favourite toggle on mount (the row just moved between sections). */
-  focusFavoriteOnMount?: boolean;
+  /** Close the row before unmarking it as favourite (it is in the favourites list, which it leaves). */
+  leaveOnUnfavorite?: boolean;
   /** Open the row with an animation when it mounts (false for the rows of the first load). */
   animateEnter?: boolean;
 }
@@ -24,7 +24,7 @@ function TodoItem({
   onToggle,
   onToggleFavorite,
   onDelete,
-  focusFavoriteOnMount = false,
+  leaveOnUnfavorite = false,
   animateEnter = false,
 }: TodoItemProps) {
   const titleId = useId();
@@ -41,7 +41,7 @@ function TodoItem({
   };
   /**
    * Closes the row (fade + height collapse) and then runs the action, so the list closes the
-   * gap smoothly. Used when the row leaves its section: deleted, or moved to the other one.
+   * gap smoothly. Used when the row leaves its list: deleted, or unmarked in the favourites.
    */
   const leaveThen = (action: () => void) => {
     if (prefersReducedMotion()) {
@@ -53,7 +53,9 @@ function TodoItem({
   };
 
   const handleToggleFavorite = () => {
-    if (!isPending && !leaving) leaveThen(() => onToggleFavorite(todo));
+    if (isPending || leaving) return;
+    if (leaveOnUnfavorite && todo.favorite) leaveThen(() => onToggleFavorite(todo));
+    else onToggleFavorite(todo);
   };
   const handleDelete = () => leaveThen(() => onDelete(todo));
 
@@ -113,7 +115,6 @@ function TodoItem({
                   title={todo.title}
                   favorite={todo.favorite}
                   onToggle={handleToggleFavorite}
-                  autoFocus={focusFavoriteOnMount}
                 />
               </DeleteTodoControls>
             </div>

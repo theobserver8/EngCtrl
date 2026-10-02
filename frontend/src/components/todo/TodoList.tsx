@@ -7,8 +7,8 @@ interface TodoListProps {
   onToggle: (todo: Todo) => void;
   onToggleFavorite: (todo: Todo) => void;
   onDelete: (todo: Todo) => void;
-  /** Id of the todo whose favourite toggle should receive focus when it mounts. */
-  focusFavoriteId?: number | null;
+  /** Rows close before being unmarked as favourite (this is the favourites list). */
+  leaveOnUnfavorite?: boolean;
   /** Animate rows that mount from now on (off during the first load of the list). */
   animateNewRows?: boolean;
 }
@@ -19,11 +19,11 @@ function TodoList({
   onToggle,
   onToggleFavorite,
   onDelete,
-  focusFavoriteId = null,
+  leaveOnUnfavorite = false,
   animateNewRows = false,
 }: TodoListProps) {
   return (
-    // Fades in when it replaces the loading skeleton or when a section gets its first row.
+    // Fades in when it replaces the loading skeleton or when a list gets its first row.
     <ul className="divide-y divide-line motion-safe:animate-[fade-in_var(--motion-base)_var(--ease-out-soft)]">
       {todos.map((todo) => (
         <TodoItem
@@ -33,7 +33,7 @@ function TodoList({
           onToggle={onToggle}
           onToggleFavorite={onToggleFavorite}
           onDelete={onDelete}
-          focusFavoriteOnMount={todo.id === focusFavoriteId}
+          leaveOnUnfavorite={leaveOnUnfavorite}
           animateEnter={animateNewRows}
         />
       ))}
