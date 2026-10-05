@@ -227,9 +227,12 @@ function TabButton<T extends string>({ tab, id, panelId, isSelected, onSelect, b
   useLayoutEffect(() => {
     const node = ownRef.current;
     if (!node) return;
-    setWidth(node.offsetWidth);
+    // Fractional widths (not offsetWidth, which rounds): the tab is aligned to the wrapper's end,
+    // so a wrapper even a fraction narrower pushes it left of the frame's edge.
+    const measure = () => setWidth(node.getBoundingClientRect().width);
+    measure();
     if (typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(() => setWidth(node.offsetWidth));
+    const observer = new ResizeObserver(measure);
     observer.observe(node);
     return () => observer.disconnect();
   }, []);
@@ -262,7 +265,7 @@ function TabButton<T extends string>({ tab, id, panelId, isSelected, onSelect, b
       aria-hidden={collapsed || undefined}
       inert={collapsed}
       style={{ width: collapsed ? 0 : (width ?? undefined) }}
-      className="-mr-1 -ml-3 box-content flex justify-end overflow-x-clip pr-1 pl-3 transition-[width] duration-(--motion-view) ease-in-out-soft"
+      className="-mr-1 -ml-3 box-content flex shrink-0 justify-end overflow-x-clip pr-1 pl-3 transition-[width] duration-(--motion-view) ease-in-out-soft"
     >
       <button
         ref={(node) => {
