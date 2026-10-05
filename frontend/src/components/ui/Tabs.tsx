@@ -28,6 +28,8 @@ export interface TabItem<T extends string> {
   icon?: ReactNode;
   /** Signal on the tab itself when its count changes, so changes made from another tab are noticed. */
   signalChanges?: boolean;
+  /** Colour of the signal when the count goes up (default lime; danger for e.g. the trash). */
+  signalTone?: "lime" | "danger";
   /**
    * Tucked behind the tab before it, only a sliver showing, and not selectable (e.g. a view with
    * nothing to show yet). It slides out when this turns false and back in when it turns true.
@@ -319,7 +321,7 @@ function TabButton<T extends string>({
   onSelect,
   buttonRef,
 }: TabButtonProps<T>) {
-  const { count, signalChanges = false, collapsed = false } = tab;
+  const { count, signalChanges = false, signalTone = "lime", collapsed = false } = tab;
   // Natural width of the tab, kept up to date (language, counter): its wrapper animates to it.
   const ownRef = useRef<HTMLButtonElement>(null);
   const [width, setWidth] = useState<number | null>(null);
@@ -398,10 +400,12 @@ function TabButton<T extends string>({
           <span
             key={change.key}
             aria-hidden="true"
-            className={`pointer-events-none absolute inset-0 rounded-t-control ${
-              change.direction === "up"
-                ? "animate-[signal-add_var(--motion-signal)_var(--ease-in-out-soft)]"
-                : "animate-[signal-remove_var(--motion-signal)_var(--ease-in-out-soft)]"
+            className={`pointer-events-none absolute inset-0 rounded-t-control opacity-0 animate-[signal-fade_var(--motion-signal)_var(--ease-in-out-soft)] ${
+              change.direction === "down"
+                ? "bg-line"
+                : signalTone === "danger"
+                  ? "bg-danger [--signal-strength:0.5]"
+                  : "bg-lime [--signal-strength:0.6]"
             }`}
           />
         )}

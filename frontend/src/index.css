@@ -127,15 +127,12 @@
   animation: none;
 }
 
-/* Activity on a tab: a wash that fades out, lime when something was added, grey when removed. */
-@keyframes signal-add {
+/* Activity on a tab: a solid wash (lime or red when something was added, grey when removed)
+   that fades out from --signal-strength. Opacity rather than a color-mix() background: the
+   minifier empties keyframes that use color-mix(). */
+@keyframes signal-fade {
   from {
-    background-color: color-mix(in oklab, var(--color-lime) 60%, transparent);
-  }
-}
-@keyframes signal-remove {
-  from {
-    background-color: var(--color-line);
+    opacity: var(--signal-strength, 1);
   }
 }
 
