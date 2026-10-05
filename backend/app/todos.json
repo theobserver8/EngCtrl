@@ -1,5 +1,5 @@
 {
-  "next_id": 8,
+  "next_id": 10,
   "todos": [
     {
       "title": "Learn React",
@@ -12,7 +12,7 @@
       "title": "Learn TypeScript",
       "description": null,
       "completed": true,
-      "favorite": true,
+      "favorite": false,
       "id": 2
     },
     {
@@ -26,7 +26,7 @@
       "title": "Learn FastAPI",
       "description": null,
       "completed": false,
-      "favorite": true,
+      "favorite": false,
       "id": 4
     },
     {

@@ -41,7 +41,6 @@ export const es: Messages = {
     heading: "Tareas",
     views: "Vistas de tareas",
     favoritesHeading: "Favoritas",
-    favoritesEmpty: "Marca una tarea con la estrella para tenerla a mano.",
     favorite: (title) => `Marcar como favorita: ${title}`,
     unfavorite: (title) => `Quitar de favoritas: ${title}`,
     loading: "Cargando tareas…",

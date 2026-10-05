@@ -179,17 +179,30 @@ describe("favourites (task 4)", () => {
 
     await user.click(screen.getByRole("button", { name: "Remove from favourites: Check rebar" }));
 
-    await waitFor(() => expect(visibleTitles()).toEqual([]));
-    expect(screen.getByText(/mark a task with the star/i)).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: /favourites · 00/i })).toHaveFocus();
-
-    await user.click(screen.getByRole("tab", { name: /tasks/i }));
-
+    // The last favourite is gone: the tab tucks away and the view (and focus) return to the tasks.
+    await waitFor(() => expect(screen.queryByRole("tab", { name: /favourites/i })).not.toBeInTheDocument());
+    expect(screen.getByRole("tab", { name: /tasks/i })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: /tasks/i })).toHaveFocus();
     expect(visibleTitles()).toEqual(["Inspect formwork", "Concrete test", "Check rebar"]);
     expect(screen.getByRole("button", { name: "Mark as favourite: Check rebar" })).toHaveAttribute(
       "aria-pressed",
       "false",
     );
+  });
+
+  it("tucks the favourites tab away while there are none, and brings it back with the first one", async () => {
+    const { user } = await renderApp();
+
+    await user.click(screen.getByRole("button", { name: "Remove from favourites: Check rebar" }));
+
+    await waitFor(() => expect(screen.queryByRole("tab", { name: /favourites/i })).not.toBeInTheDocument());
+    await user.click(screen.getByRole("tab", { name: /tasks/i }));
+    await user.keyboard("{ArrowRight}");
+    expect(screen.getByRole("tab", { name: /tasks/i })).toHaveAttribute("aria-selected", "true");
+
+    await user.click(screen.getByRole("button", { name: "Mark as favourite: Concrete test" }));
+
+    expect(await screen.findByRole("tab", { name: /favourites · 01/i })).toBeInTheDocument();
   });
 });
 

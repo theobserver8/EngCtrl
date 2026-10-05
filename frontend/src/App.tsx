@@ -79,7 +79,7 @@ function App() {
   };
 
   /** Content of a view's panel: the first load, a failed load, the list or its empty state. */
-  const renderPanel = (list: Todo[], empty: ReactNode, leaveOnUnfavorite = false) => {
+  const renderPanel = (list: Todo[], empty?: ReactNode, leaveOnUnfavorite = false) => {
     if (status === "loading") return <TodoListSkeleton label={t.tasks.loading} />;
     if (loadFailed)
       return (
@@ -150,6 +150,8 @@ function App() {
                   label: t.tasks.favoritesHeading,
                   count: loaded ? favorites.length : undefined,
                   signalChanges: true,
+                  // Tucked behind "Tasks" until there is a favourite to show.
+                  collapsed: favorites.length === 0,
                   icon: (
                     <StarIcon
                       className={`size-3.5 transition-[fill] duration-(--motion-base) ${
@@ -157,13 +159,8 @@ function App() {
                       }`}
                     />
                   ),
-                  panel: renderPanel(
-                    favorites,
-                    <p className="py-4 text-[13px] text-ink-faint">
-                      {t.tasks.favoritesEmpty}
-                    </p>,
-                    true,
-                  ),
+                  // No empty state: without favourites the tab is tucked away and cannot be opened.
+                  panel: renderPanel(favorites, undefined, true),
                 },
               ]}
             />
