@@ -1,4 +1,5 @@
 import {
+  useEffect,
   useId,
   useImperativeHandle,
   useLayoutEffect,
@@ -72,13 +73,70 @@ function Tabs<T extends string>({ label, tabs, selected, onSelect, aside, ref }:
   // Height of the frame right before a switch, animated to the new view's height after render.
   const switchFromHeight = useRef<number | null>(null);
   const running = useRef<Animation[]>([]);
+  // Stops the scroll that follows a running switch (see `followScroll`).
+  const stopScrollFollow = useRef<(() => void) | null>(null);
+
+  /**
+   * Scrolls from `top` to `targetTop` in step with the frame's resize (same duration and curve).
+   * Left to the browser, a shrinking page clamps the scroll position: it stops early, as soon as
+   * the page is no taller than the window, and halts abruptly. The page is kept tall enough
+   * (min-height on <html>) for the scroll to run its whole course. Wheel or touch input hands the
+   * scroll back to the user.
+   */
+  const followScroll = (resize: Animation, top: number, targetTop: number) => {
+    const html = document.documentElement;
+    let frameRequest = 0;
+    let userScrolled = false;
+    const onUserScroll = () => {
+      userScrolled = true;
+    };
+    const stop = () => {
+      cancelAnimationFrame(frameRequest);
+      window.removeEventListener("wheel", onUserScroll);
+      window.removeEventListener("touchstart", onUserScroll);
+      stopScrollFollow.current = null;
+    };
+    const step = () => {
+      if (resize.playState === "running") {
+        const progress = resize.effect?.getComputedTiming().progress ?? 0;
+        const current = top + (targetTop - top) * progress;
+        if (!userScrolled) {
+          html.style.minHeight = `${current + window.innerHeight}px`;
+          window.scrollTo({ top: current, behavior: "instant" });
+        }
+        frameRequest = requestAnimationFrame(step);
+        return;
+      }
+      stop();
+      // Cancelled by another switch, which takes over the scroll (and the min-height) from here.
+      if (resize.playState !== "finished") return;
+      html.style.minHeight = "";
+      if (!userScrolled) window.scrollTo({ top: targetTop, behavior: "instant" });
+    };
+    window.addEventListener("wheel", onUserScroll, { passive: true });
+    window.addEventListener("touchstart", onUserScroll, { passive: true });
+    stopScrollFollow.current = stop;
+    step();
+  };
+
+  useEffect(
+    () => () => {
+      stopScrollFollow.current?.();
+      document.documentElement.style.minHeight = "";
+    },
+    [],
+  );
 
   const select = (id: T) => {
     if (id === selected) return;
     const frame = frameRef.current;
     if (frame && typeof frame.animate === "function" && !prefersReducedMotion()) {
       // Measured mid-switch too, so quick successive switches continue from where they are.
-      switchFromHeight.current = frame.getBoundingClientRect().height;
+      const from = frame.getBoundingClientRect().height;
+      switchFromHeight.current = from;
+      // Held at this height until the resize takes over: laid out at the new view's height even
+      // for a moment, a shorter page would clamp the scroll position at once (a jump to the top).
+      frame.style.height = `${from}px`;
       setOutgoing(selected);
     }
     onSelect(id);
@@ -89,6 +147,7 @@ function Tabs<T extends string>({ label, tabs, selected, onSelect, aside, ref }:
     const from = switchFromHeight.current;
     switchFromHeight.current = null;
     if (!frame || from === null) return;
+    stopScrollFollow.current?.();
     const incoming = panelRefs.current.get(selected);
     const leaving = outgoing === null ? undefined : panelRefs.current.get(outgoing);
     // A switch interrupted midway continues from the current opacities instead of jumping.
@@ -100,8 +159,25 @@ function Tabs<T extends string>({ label, tabs, selected, onSelect, aside, ref }:
     running.current.forEach((animation) => animation.cancel());
 
     const timing: KeyframeAnimationOptions = { duration: MOTION_MS.view, easing: EASE_IN_OUT_SOFT };
-    const to = frame.getBoundingClientRect().height;
+    // The incoming panel (in flow) measured inside the held frame, so the page never shrinks
+    // abruptly; it shrinks with the resize and the scroll position follows it smoothly.
+    const { borderTopWidth, borderBottomWidth } = getComputedStyle(frame);
+    const to =
+      (incoming?.getBoundingClientRect().height ?? 0) + parseFloat(borderTopWidth) + parseFloat(borderBottomWidth);
+    // Where the scroll ends: the page loses (from - to), and cannot end shorter than the window.
+    // Measured on <body>, unaffected by the min-height a previous switch may still hold.
+    const scrollTop = window.scrollY;
+    const pageTo = Math.max(window.innerHeight, document.body.getBoundingClientRect().height - (from - to));
+    const scrollTarget = Math.min(scrollTop, pageTo - window.innerHeight);
+    frame.style.height = "";
     const resize = frame.animate([{ height: `${from}px` }, { height: `${to}px` }], timing);
+    if (scrollTarget < scrollTop) followScroll(resize, scrollTop, scrollTarget);
+    else if (document.documentElement.style.minHeight) {
+      // An interrupted switch was holding the page's height: hold it at the current scroll until
+      // this one ends, when the page is tall enough again (released any earlier, it would clamp).
+      document.documentElement.style.minHeight = `${scrollTop + window.innerHeight}px`;
+      resize.finished.then(() => (document.documentElement.style.minHeight = ""), () => undefined);
+    }
     const fadeIn = incoming?.animate([{ opacity: inFrom }, { opacity: 1 }], timing);
     // Holds opacity 0 until the next switch cancels it: the panel is only made invisible on the
     // next render, and without the fill it would flash fully opaque for a frame in between.
