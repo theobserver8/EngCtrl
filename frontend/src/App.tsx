@@ -6,14 +6,14 @@ import TodoList from "./components/todo/TodoList";
 import TodoListSkeleton from "./components/todo/TodoListSkeleton";
 import EmptyState from "./components/ui/EmptyState";
 import ErrorBanner from "./components/ui/ErrorBanner";
-import { StarIcon } from "./components/ui/icons";
+import { StarIcon, TrashIcon } from "./components/ui/icons";
 import Tabs, { type TabsHandle } from "./components/ui/Tabs";
 import { useTodos } from "./hooks/useTodos";
 import { useI18n } from "./i18n/useI18n";
 import type { Todo, TodoDraft } from "./types/todo";
 import { getErrorMessage } from "./utils/errorMessage";
 
-type TaskView = "all" | "favorites";
+type TaskView = "all" | "favorites" | "trash";
 
 function App() {
   const { t } = useI18n();
@@ -42,6 +42,7 @@ function App() {
   }, [status]);
 
   const favorites = todos.filter((todo) => todo.favorite);
+  const trashed = todos.filter((todo) => todo.trashed);
   const completedCount = todos.filter((todo) => todo.completed).length;
   const loadFailed = status === "error";
   const loaded = status === "success";
@@ -161,6 +162,16 @@ function App() {
                   ),
                   // No empty state: without favourites the tab is tucked away and cannot be opened.
                   panel: renderPanel(favorites, undefined, true),
+                },
+                {
+                  id: "trash",
+                  label: t.tasks.trashHeading,
+                  count: loaded ? trashed.length : undefined,
+                  signalChanges: true,
+                  // Last, tucked behind the others until something is moved to the trash.
+                  collapsed: trashed.length === 0,
+                  icon: <TrashIcon className="size-3.5" />,
+                  panel: renderPanel(trashed),
                 },
               ]}
             />

@@ -1,5 +1,6 @@
-import { act, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { SEED_TODOS } from "./test/fakeApi";
 import { getRow, renderApp, visiblePanel, visibleTitles } from "./test/renderApp";
 
 const GUARD_MS = 450; // the delete confirmation ignores activations for 400 ms
@@ -203,6 +204,22 @@ describe("favourites (task 4)", () => {
     await user.click(screen.getByRole("button", { name: "Mark as favourite: Concrete test" }));
 
     expect(await screen.findByRole("tab", { name: /favourites · 01/i })).toBeInTheDocument();
+  });
+});
+
+describe("trash", () => {
+  it("keeps the trash tab tucked away until a task is in the trash, and lists it there", async () => {
+    await renderApp();
+    expect(screen.queryByRole("tab", { name: /trash/i })).not.toBeInTheDocument();
+
+    cleanup();
+    const { user } = await renderApp({
+      todos: SEED_TODOS.map((todo) => ({ ...todo, trashed: todo.id === 2 })),
+    });
+
+    await user.click(screen.getByRole("tab", { name: /trash · 01/i }));
+
+    expect(visibleTitles()).toEqual(["Concrete test"]);
   });
 });
 

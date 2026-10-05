@@ -41,6 +41,7 @@ export const es: Messages = {
     heading: "Tareas",
     views: "Vistas de tareas",
     favoritesHeading: "Favoritas",
+    trashHeading: "Papelera",
     favorite: (title) => `Marcar como favorita: ${title}`,
     unfavorite: (title) => `Quitar de favoritas: ${title}`,
     loading: "Cargando tareas…",

@@ -31,7 +31,7 @@ export interface TabItem<T extends string> {
   /**
    * Tucked behind the tab before it, only a sliver showing, and not selectable (e.g. a view with
    * nothing to show yet). It slides out when this turns false and back in when it turns true.
-   * Never set on the first tab.
+   * Consecutive collapsed tabs stack, each one behind the previous. Never set on the first tab.
    */
   collapsed?: boolean;
   panel: ReactNode;
@@ -232,10 +232,12 @@ function Tabs<T extends string>({ label, tabs, selected, onSelect, aside, ref }:
     <div>
       <div className="flex items-end justify-between gap-3">
         <div role="tablist" aria-label={label} onKeyDown={handleKeyDown} className="flex min-w-0 items-end gap-1">
-          {tabs.map((tab) => (
+          {tabs.map((tab, index) => (
             <TabButton
               key={tab.id}
               tab={tab}
+              stackOrder={tabs.length - index}
+              followsOutlinedTab={index > 0 && (tabs[index - 1].id === selected || !!tabs[index - 1].collapsed)}
               id={tabId(tab.id)}
               panelId={panelId(tab.id)}
               isSelected={tab.id === selected}
@@ -252,9 +254,11 @@ function Tabs<T extends string>({ label, tabs, selected, onSelect, aside, ref }:
 
       {/* The corner under the first tab stays square so the tab flows into the frame. */}
       {/* Clipped: the inactive panels lie (invisible) on top of the active one and may be taller. */}
+      {/* Layered above the collapsed tabs (their bottom edge must not hide its top border) and */}
+      {/* below the selected one (z-10), which opens into it. */}
       <div
         ref={frameRef}
-        className={`relative overflow-clip rounded-control border border-line ${selectedIndex === 0 ? "rounded-tl-none" : ""}`}
+        className={`relative z-5 overflow-clip rounded-control border border-line ${selectedIndex === 0 ? "rounded-tl-none" : ""}`}
       >
         {tabs.map((tab) => {
           const isSelected = tab.id === selected;
@@ -289,6 +293,10 @@ interface TabButtonProps<T extends string> {
   id: string;
   panelId: string;
   isSelected: boolean;
+  /** Higher for earlier tabs: a collapsed tab lies behind the ones before it. Below 5 (the frame). */
+  stackOrder: number;
+  /** The tab before it is outlined (selected or collapsed): a collapsed tab's edge runs up to it. */
+  followsOutlinedTab: boolean;
   onSelect: (id: T) => void;
   buttonRef: (node: HTMLButtonElement | null) => void;
 }
@@ -299,7 +307,16 @@ interface CountChange {
   direction: "up" | "down";
 }
 
-function TabButton<T extends string>({ tab, id, panelId, isSelected, onSelect, buttonRef }: TabButtonProps<T>) {
+function TabButton<T extends string>({
+  tab,
+  id,
+  panelId,
+  isSelected,
+  stackOrder,
+  followsOutlinedTab,
+  onSelect,
+  buttonRef,
+}: TabButtonProps<T>) {
   const { count, signalChanges = false, collapsed = false } = tab;
   // Natural width of the tab, kept up to date (language, counter): its wrapper animates to it.
   const ownRef = useRef<HTMLButtonElement>(null);
@@ -327,6 +344,7 @@ function TabButton<T extends string>({ tab, id, panelId, isSelected, onSelect, b
     }
   }
 
+  const compactClass = tab.icon ? "max-sm:sr-only" : "";
   const stateClasses = isSelected
     ? "z-10 border-line bg-sheet text-ink"
     : collapsed
@@ -341,14 +359,18 @@ function TabButton<T extends string>({ tab, id, panelId, isSelected, onSelect, b
     // aligned to the start: its left edge never moves (it lines up with the frame) and a change of
     // width (e.g. another language) only moves its right edge. Clipped horizontally only, to its
     // padding box: the padding leaves room for the focus ring and the net-zero margins keep the
-    // spacing. The left padding reaches behind the previous tab's rounded corner, so a collapsed
-    // tab's top edge runs on until it meets that tab's border. Vertically it overflows freely
-    // (the tab overlaps the frame's top border).
+    // spacing. Behind an outlined tab, the left padding reaches behind its rounded corner, so a
+    // collapsed tab's top edge runs on until it meets that tab's border (behind a tab with no
+    // outline that part would show as a loose block). Vertically it overflows freely
+    // (the tab overlaps the frame's top border). Collapsed, it takes 2px more than nothing (a
+    // smaller negative margin), so tabs stacked one behind another each show the same sliver.
     <div
       aria-hidden={collapsed || undefined}
       inert={collapsed}
       style={{ width: collapsed ? 0 : (width ?? undefined) }}
-      className="-mr-1 -ml-3 box-content flex shrink-0 overflow-x-clip pr-1 pl-3 transition-[width] duration-(--motion-view) ease-in-out-soft"
+      className={`box-content flex shrink-0 overflow-x-clip pr-1 transition-[width,margin-right,margin-left,padding-left] duration-(--motion-view) ease-in-out-soft ${
+        collapsed ? "-mr-0.5" : "-mr-1"
+      } ${followsOutlinedTab ? "-ml-3 pl-3" : "-ml-1 pl-1"}`}
     >
       <button
         ref={(node) => {
@@ -364,6 +386,7 @@ function TabButton<T extends string>({ tab, id, panelId, isSelected, onSelect, b
         onClick={() => {
           if (!collapsed) onSelect(tab.id);
         }}
+        style={isSelected ? undefined : { zIndex: stackOrder }}
         // -mb-px: the selected tab covers the frame's top border, opening the folder into its panel.
         className={`group focus-ring relative -mb-px flex h-10 cursor-pointer shrink-0 items-center rounded-t-control border border-b-0 px-3 font-mono text-[11px] font-medium tracking-[0.14em] whitespace-nowrap uppercase tabular-nums sm:px-4 ${TAB_TRANSITION} ${stateClasses}`}
       >
@@ -389,16 +412,19 @@ function TabButton<T extends string>({ tab, id, panelId, isSelected, onSelect, b
         />
         <span className="relative flex items-center gap-2">
           {tab.icon}
-          {tab.label}
+          {/* On phones a tab with an icon shows only the icon and the count, so every tab fits; */}
+          {/* the label stays in its accessible name. */}
+          <span className={compactClass}>{tab.label}</span>
           {count === undefined ? (
             // Reserves the counter's width while loading, so the tabs do not shift when it arrives.
             <span aria-hidden="true" className="opacity-0">
-              ·&nbsp;00
+              <span className={compactClass}>·&nbsp;</span>00
             </span>
           ) : (
             // The space is ignored by the flex layout (gap spaces it) but keeps the accessible name readable.
             <span className="flex overflow-hidden motion-safe:animate-[fade-in_var(--motion-base)_var(--ease-out-soft)]">
-              {" "}·&nbsp;
+              {" "}
+              <span className={compactClass}>·&nbsp;</span>
               <RollingNumber value={count} format={formatCount} />
             </span>
           )}

@@ -21,7 +21,7 @@
       "title": "Learn Vite",
       "description": null,
       "completed": false,
-      "favorite": false,
+      "favorite": true,
       "trashed": false,
       "id": 3
     },
