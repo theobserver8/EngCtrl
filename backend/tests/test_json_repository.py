@@ -53,6 +53,7 @@ class TestMigrations:
             "description": None,
             "completed": True,
             "favorite": False,
+            "trashed": False,
             "id": 1,
         }
 

@@ -24,6 +24,7 @@ class TestListTodos:
             "description": "Slab, level 2",
             "completed": True,
             "favorite": True,
+            "trashed": False,
         }
 
     def test_missing_data_file_means_empty_list(self, tmp_path: Path) -> None:
@@ -43,6 +44,7 @@ class TestCreateTodo:
             "description": None,
             "completed": False,
             "favorite": False,
+            "trashed": False,
         }
         assert read_file(data_file)["todos"][-1]["title"] == "Check rebar"
 
@@ -75,8 +77,18 @@ class TestCreateTodo:
             {"title": "A", "description": "x" * 501},
             {"title": "A", "unknown": True},
             {"title": "A", "completed": "maybe"},
+            {"title": "A", "trashed": True},
         ],
-        ids=["missing-title", "empty", "blank", "too-long", "description-too-long", "unknown-field", "bad-type"],
+        ids=[
+            "missing-title",
+            "empty",
+            "blank",
+            "too-long",
+            "description-too-long",
+            "unknown-field",
+            "bad-type",
+            "created-in-trash",
+        ],
     )
     def test_rejects_invalid_payloads(self, client: TestClient, payload: dict, data_file: Path) -> None:
         before = data_file.read_text(encoding="utf-8")
@@ -101,6 +113,19 @@ class TestUpdateTodo:
         assert body["completed"] is True
         assert body["description"] == "Slab, level 2"
 
+    def test_moves_to_the_trash_and_back_keeping_the_other_fields(
+        self, client: TestClient, data_file: Path
+    ) -> None:
+        trashed = client.patch("/todos/2", json={"trashed": True}).json()
+
+        assert trashed["trashed"] is True
+        assert (trashed["completed"], trashed["favorite"]) == (True, True)
+        assert read_file(data_file)["todos"][1]["trashed"] is True
+
+        restored = client.patch("/todos/2", json={"trashed": False}).json()
+
+        assert restored == {**trashed, "trashed": False}
+
     def test_updates_title_and_description(self, client: TestClient) -> None:
         body = client.patch("/todos/1", json={"title": " Renamed ", "description": "Details"}).json()
 
@@ -117,8 +142,16 @@ class TestUpdateTodo:
 
     @pytest.mark.parametrize(
         "payload",
-        [{}, {"title": None}, {"completed": None}, {"favorite": None}, {"title": " "}, {"complete": True}],
-        ids=["empty", "null-title", "null-completed", "null-favorite", "blank-title", "typo-field"],
+        [
+            {},
+            {"title": None},
+            {"completed": None},
+            {"favorite": None},
+            {"trashed": None},
+            {"title": " "},
+            {"complete": True},
+        ],
+        ids=["empty", "null-title", "null-completed", "null-favorite", "null-trashed", "blank-title", "typo-field"],
     )
     def test_rejects_invalid_payloads(self, client: TestClient, payload: dict) -> None:
         assert client.patch("/todos/1", json=payload).status_code == 422
