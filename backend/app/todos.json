@@ -6,13 +6,15 @@
       "description": null,
       "completed": true,
       "favorite": false,
+      "trashed": false,
       "id": 1
     },
     {
       "title": "Learn TypeScript",
       "description": null,
       "completed": true,
-      "favorite": true,
+      "favorite": false,
+      "trashed": false,
       "id": 2
     },
     {
@@ -20,13 +22,15 @@
       "description": null,
       "completed": false,
       "favorite": false,
+      "trashed": false,
       "id": 3
     },
     {
       "title": "Learn FastAPI",
       "description": null,
       "completed": false,
-      "favorite": true,
+      "favorite": false,
+      "trashed": false,
       "id": 4
     },
     {
@@ -34,6 +38,7 @@
       "description": null,
       "completed": false,
       "favorite": false,
+      "trashed": false,
       "id": 5
     },
     {
@@ -41,6 +46,7 @@
       "description": null,
       "completed": false,
       "favorite": false,
+      "trashed": false,
       "id": 6
     },
     {
@@ -48,6 +54,7 @@
       "description": null,
       "completed": false,
       "favorite": false,
+      "trashed": false,
       "id": 7
     }
   ]

@@ -11,8 +11,22 @@ from app.main import create_app
 from app.repositories.json_repository import JsonTodoRepository
 
 SEED_TODOS = [
-    {"id": 1, "title": "Inspect formwork", "description": None, "completed": False, "favorite": False},
-    {"id": 2, "title": "Concrete test", "description": "Slab, level 2", "completed": True, "favorite": True},
+    {
+        "id": 1,
+        "title": "Inspect formwork",
+        "description": None,
+        "completed": False,
+        "favorite": False,
+        "trashed": False,
+    },
+    {
+        "id": 2,
+        "title": "Concrete test",
+        "description": "Slab, level 2",
+        "completed": True,
+        "favorite": True,
+        "trashed": False,
+    },
 ]
 
 

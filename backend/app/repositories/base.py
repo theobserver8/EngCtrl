@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from collections.abc import Collection
 
 from app.schemas.todo import Todo, TodoCreate, TodoUpdate
 
@@ -28,4 +29,12 @@ class TodoRepository(ABC):
 
         Raises:
             TodoNotFoundError: if no todo has the given id.
+        """
+
+    @abstractmethod
+    def delete_many(self, todo_ids: Collection[int]) -> None:
+        """Remove several todos in a single operation (all or none are written).
+
+        Ids with no todo are ignored: deleting is idempotent, so a todo already deleted
+        elsewhere does not make the whole operation fail.
         """

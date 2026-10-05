@@ -8,9 +8,9 @@ control de calidad. Cubre todas las tareas de [`INSTRUCTIONS.md`](INSTRUCTIONS.m
 bilingüe (español / inglés) y tests automáticos en ambas partes.
 
 <p align="center">
-  <img src="docs/screenshots/desktop-es.png" alt="Vista de escritorio en español: cajetín con anillo de progreso y pestaña Tareas, con las favoritas marcadas con la estrella" width="68%">
+  <img src="docs/screenshots/desktop-es.png" alt="Vista de escritorio en español: cajetín con anillo de progreso y pestaña Tareas, con las favoritas marcadas con la estrella y dos tareas en la papelera en rojo" width="68%">
   &nbsp;
-  <img src="docs/screenshots/mobile-en.png" alt="Vista móvil en inglés con la pestaña Favoritas seleccionada" width="24%">
+  <img src="docs/screenshots/mobile-en.png" alt="Vista móvil en inglés con la pestaña Papelera seleccionada y el botón para vaciarla" width="24%">
 </p>
 
 ## Funcionalidades
@@ -18,8 +18,8 @@ bilingüe (español / inglés) y tests automáticos en ambas partes.
 | Tarea del enunciado | Implementación |
 |---|---|
 | 1. Estado de completado guardado en el backend | `PATCH /todos/{id}`; el checkbox cambia al instante y vuelve atrás si falla el guardado |
-| 2. Borrar tareas | `DELETE /todos/{id}`; botón de papelera con confirmación en dos pasos, a prueba de dobles clics accidentales |
-| 3. Carga automática de tareas | La lista se carga al abrir la página y se recarga tras cada alta, borrado, completado o cambio de favorita |
+| 2. Borrar tareas | Una papelera: el botón de la papelera envía allí la tarea (se muestra en rojo, con un botón para restaurarla) y no se pierde nada hasta vaciarla. Al vaciarla se borran todas sus tareas con una sola petición, `DELETE /todos?ids=…` |
+| 3. Carga automática de tareas | La lista se carga al abrir la página y se recarga tras cada alta, completado, cambio de favorita o de papelera y al vaciar la papelera |
 | 4. Descripciones y favoritas | Descripción opcional (hasta 500 caracteres) y botón de estrella; las favoritas tienen su propia pestaña, junto a la lista completa, donde mantienen la estrella encendida |
 | 5. README | Este archivo, en español y en [inglés](README.md) |
 
@@ -31,7 +31,9 @@ Además de lo que pide el enunciado:
   un borrado.
 - **Accesibilidad**: HTML semántico, uso completo con teclado, foco visible, avisos para lectores
   de pantalla, contraste WCAG AA y respeto a la preferencia de *reducir movimiento*.
-- **Tests**: 55 tests de backend (pytest) y 49 de frontend (Vitest + Testing Library).
+- **Pestañas que aparecen cuando hacen falta**: Favoritas y Papelera quedan plegadas detrás de la
+  pestaña anterior mientras están vacías, y se despliegan con su primera tarea.
+- **Tests**: 69 tests de backend (pytest) y 59 de frontend (Vitest + Testing Library).
 
 ## Puesta en marcha
 
@@ -107,8 +109,8 @@ npm run build     # comprueba también los tipos del código, incluidos los test
   propio archivo de datos temporal.
 - Los **tests del frontend** usan la aplicación completa como lo haría una persona, contra una API
   falsa en memoria. Cubren cada tarea del enunciado, además de la gestión de errores, las vueltas
-  atrás, la confirmación de borrado y el selector de idioma. El cliente HTTP, los mensajes de error,
-  la detección del idioma y el formulario tienen también tests unitarios.
+  atrás, la papelera y el selector de idioma. El cliente HTTP, el hook con el estado de la lista,
+  los mensajes de error, la detección del idioma y el formulario tienen también tests unitarios.
 
 ## API
 
@@ -116,17 +118,23 @@ npm run build     # comprueba también los tipos del código, incluidos los test
 |---|---|---|---|
 | `GET` | `/todos` | — | `200` lista de tareas |
 | `POST` | `/todos` | `{ title, description?, completed?, favorite? }` | `201` tarea · `422` datos no válidos |
-| `PATCH` | `/todos/{id}` | Cualquier combinación de `title`, `description`, `completed`, `favorite` | `200` tarea · `404` · `422` |
+| `PATCH` | `/todos/{id}` | Cualquier combinación de `title`, `description`, `completed`, `favorite`, `trashed` | `200` tarea · `404` · `422` |
 | `DELETE` | `/todos/{id}` | — | `204` · `404` |
+| `DELETE` | `/todos?ids=1&ids=2` | — | `204` · `422` |
 
 ```json
-{ "id": 4, "title": "Learn FastAPI", "description": "Routers and validation", "completed": false, "favorite": true }
+{ "id": 4, "title": "Learn FastAPI", "description": "Routers and validation", "completed": false, "favorite": true, "trashed": false }
 ```
 
 - Los títulos se guardan sin espacios en los extremos y deben tener entre 1 y 120 caracteres. La
   descripción es opcional, de hasta 500 caracteres, y si está vacía se guarda como `null`.
 - `PATCH` solo cambia los campos que se envían. Se rechazan el cuerpo vacío, los campos
   desconocidos y `null` en un campo obligatorio; `"description": null` borra la descripción.
+- `trashed` mete y saca una tarea de la papelera sin tocar sus demás campos, así que al restaurarla
+  vuelve exactamente como estaba. No se puede crear una tarea directamente en la papelera.
+- `DELETE /todos?ids=…` borra de 1 a 1000 tareas en una sola petición y una sola escritura del
+  archivo. Los ids que ya no existen se ignoran, así que repetirla o coincidir con otro cliente
+  nunca falla.
 - Si el archivo de datos no se puede leer, la API responde `500` con un mensaje claro en lugar de
   fallar sin control.
 
@@ -150,8 +158,8 @@ frontend/
     i18n/                    # Proveedor de idioma, detección y diccionarios ES/EN
     components/
       layout/                # Hoja, cabecera, cajetín, anillo de progreso
-      todo/                  # Formulario, lista, fila, controles de favorita y borrado
-      ui/                    # Botón, checkbox, iconos, banderas, aviso de error, estado vacío
+      todo/                  # Formulario, lista, fila, controles de favorita y papelera
+      ui/                    # Botón, checkbox, pestañas, iconos, banderas, aviso de error, estado vacío
     test/                    # Configuración de tests y API falsa en memoria
     index.css                # Tokens de diseño (Tailwind v4 @theme) y animaciones
 ```
@@ -178,8 +186,8 @@ frontend/
 - **Un único sitio para los datos.** Todas las peticiones pasan por `api/client.ts` y todo el
   estado de la lista vive en `useTodos`. Cada acción se ejecuta a través de una sola función que
   después recarga la lista, así que ninguna acción nueva puede olvidarse de hacerlo.
-- **Respuesta inmediata.** Completar, marcar como favorita y borrar actualizan la pantalla al
-  momento y se deshacen si la petición falla. Antes de cada acción se cancelan las recargas en
+- **Respuesta inmediata.** Completar, marcar como favorita, enviar a la papelera y vaciarla
+  actualizan la pantalla al momento y se deshacen si la petición falla. Antes de cada acción se cancelan las recargas en
   curso, para que unos datos desfasados nunca pisen el cambio que se ve en pantalla.
 - **Traducciones comprobadas por el compilador.** El diccionario en español está tipado contra el
   inglés: si falta una clave o sobra alguna, el proyecto no compila. Los mensajes del backend nunca
@@ -189,9 +197,13 @@ frontend/
   cuadrícula de fondo, marcas de corte, cajetín, códigos de referencia `T-007` y un anillo de
   progreso segmentado que recuerda al logotipo. Todos los colores son tokens de diseño; no hay
   códigos de color sueltos en los componentes.
-- **Movimiento sereno y coherente.** Una escala de tiempos común (200 / 320 / 450 ms). Las filas
-  abren y cierran su altura para que la lista nunca dé saltos, y todo pasa a ser instantáneo
-  cuando el sistema pide reducir el movimiento.
+- **Una papelera en lugar de una confirmación.** Borrar las tareas una a una pedía confirmación;
+  enviarlas a la papelera no la necesita, porque se pueden restaurar. La única acción irreversible
+  que queda es vaciar la papelera, con su propio botón de texto inequívoco.
+- **Movimiento sereno y coherente.** Una escala de tiempos común (200 / 320 / 450 ms, y 550 ms
+  para cambiar de vista). Las filas abren y cierran su altura para que la lista nunca dé saltos,
+  las pestañas se despliegan desde detrás de las otras y todo pasa a ser instantáneo cuando el
+  sistema pide reducir el movimiento.
 
 ## Posibles siguientes pasos
 

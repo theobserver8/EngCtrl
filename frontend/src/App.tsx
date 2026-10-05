@@ -6,14 +6,16 @@ import TodoList from "./components/todo/TodoList";
 import TodoListSkeleton from "./components/todo/TodoListSkeleton";
 import EmptyState from "./components/ui/EmptyState";
 import ErrorBanner from "./components/ui/ErrorBanner";
-import { StarIcon } from "./components/ui/icons";
+import Button from "./components/ui/Button";
+import { ChecklistIcon, StarIcon, TrashIcon } from "./components/ui/icons";
 import Tabs, { type TabsHandle } from "./components/ui/Tabs";
 import { useTodos } from "./hooks/useTodos";
 import { useI18n } from "./i18n/useI18n";
 import type { Todo, TodoDraft } from "./types/todo";
 import { getErrorMessage } from "./utils/errorMessage";
+import { MOTION_MS, prefersReducedMotion } from "./utils/motion";
 
-type TaskView = "all" | "favorites";
+type TaskView = "all" | "favorites" | "trash";
 
 function App() {
   const { t } = useI18n();
@@ -28,12 +30,18 @@ function App() {
     addTodo,
     toggleTodo,
     toggleFavorite,
-    deleteTodo,
+    trashTodo,
+    restoreTodo,
+    emptyTrash,
     clearError,
   } = useTodos();
   // Polite live region so screen reader users hear the outcome of their actions.
   const [announcement, setAnnouncement] = useState("");
   const [view, setView] = useState<TaskView>("all");
+  // The trash rows are closing before the trash is emptied: the button ignores further clicks.
+  // The ref guards at once, even against clicks that arrive before the next render.
+  const [emptyingTrash, setEmptyingTrash] = useState(false);
+  const emptyingTrashRef = useRef(false);
   const tabsRef = useRef<TabsHandle>(null);
   // Rows of the first load appear at once; rows added or moved afterwards open smoothly.
   const [animateNewRows, setAnimateNewRows] = useState(false);
@@ -42,6 +50,11 @@ function App() {
   }, [status]);
 
   const favorites = todos.filter((todo) => todo.favorite);
+  const trashed = todos.filter((todo) => todo.trashed);
+  // Count shown on the empty-trash button. It keeps the last one while the emptied trash fades out
+  // of view, instead of reading "0" for a moment (derived during render, not in an effect).
+  const [emptyTrashCount, setEmptyTrashCount] = useState(trashed.length);
+  if (trashed.length > 0 && trashed.length !== emptyTrashCount) setEmptyTrashCount(trashed.length);
   const completedCount = todos.filter((todo) => todo.completed).length;
   const loadFailed = status === "error";
   const loaded = status === "success";
@@ -65,21 +78,49 @@ function App() {
     }
   };
 
-  const handleDelete = async (todo: Todo) => {
-    if (await deleteTodo(todo))
-      setAnnouncement(t.announcements.deleted(todo.title));
+  const handleTrash = async (todo: Todo) => {
+    if (await trashTodo(todo)) setAnnouncement(t.announcements.trashed(todo.title));
+  };
+
+  const handleRestore = async (todo: Todo) => {
+    // Restored from the trash view, the row closes and would take the focus with it (see above).
+    if (view === "trash") tabsRef.current?.focusSelectedTab();
+    if (await restoreTodo(todo)) setAnnouncement(t.announcements.restored(todo.title));
+  };
+
+  const handleEmptyTrash = () => {
+    if (emptyingTrashRef.current) return;
+    const count = trashed.length;
+    emptyingTrashRef.current = true;
+    setEmptyingTrash(true);
+    const empty = async () => {
+      // The trash tab tucks away once empty and the view returns to the tasks: hand the focus to
+      // that tab now, before the button it is on goes away.
+      tabsRef.current?.focusTab("all");
+      if (await emptyTrash()) setAnnouncement(t.announcements.trashEmptied(count));
+      emptyingTrashRef.current = false;
+      setEmptyingTrash(false);
+    };
+    // Every row closes first, then they are deleted at once (a single request).
+    if (prefersReducedMotion()) void empty();
+    else window.setTimeout(() => void empty(), MOTION_MS.slow);
   };
 
   const listProps = {
     pendingIds,
     onToggle: toggleTodo,
     onToggleFavorite: handleToggleFavorite,
-    onDelete: handleDelete,
+    onTrash: handleTrash,
+    onRestore: handleRestore,
     animateNewRows,
   };
 
   /** Content of a view's panel: the first load, a failed load, the list or its empty state. */
-  const renderPanel = (list: Todo[], empty: ReactNode, leaveOnUnfavorite = false) => {
+  const renderPanel = (
+    list: Todo[],
+    empty?: ReactNode,
+    variant?: { leaveOnUnfavorite?: boolean; inTrashView?: boolean; closing?: boolean },
+  ) => {
     if (status === "loading") return <TodoListSkeleton label={t.tasks.loading} />;
     if (loadFailed)
       return (
@@ -88,7 +129,7 @@ function App() {
         </p>
       );
     return list.length > 0 ? (
-      <TodoList todos={list} leaveOnUnfavorite={leaveOnUnfavorite} {...listProps} />
+      <TodoList todos={list} {...variant} {...listProps} />
     ) : (
       empty
     );
@@ -142,6 +183,7 @@ function App() {
                 {
                   id: "all",
                   label: t.tasks.heading,
+                  icon: <ChecklistIcon className="size-3.5" />,
                   count: loaded ? todos.length : undefined,
                   panel: renderPanel(todos, <EmptyState message={t.tasks.empty} />),
                 },
@@ -150,6 +192,8 @@ function App() {
                   label: t.tasks.favoritesHeading,
                   count: loaded ? favorites.length : undefined,
                   signalChanges: true,
+                  // Tucked behind "Tasks" until there is a favourite to show.
+                  collapsed: favorites.length === 0,
                   icon: (
                     <StarIcon
                       className={`size-3.5 transition-[fill] duration-(--motion-base) ${
@@ -157,12 +201,35 @@ function App() {
                       }`}
                     />
                   ),
-                  panel: renderPanel(
-                    favorites,
-                    <p className="py-4 text-[13px] text-ink-faint">
-                      {t.tasks.favoritesEmpty}
-                    </p>,
-                    true,
+                  // No empty state: without favourites the tab is tucked away and cannot be opened.
+                  panel: renderPanel(favorites, undefined, { leaveOnUnfavorite: true }),
+                },
+                {
+                  id: "trash",
+                  label: t.tasks.trashHeading,
+                  count: loaded ? trashed.length : undefined,
+                  signalChanges: true,
+                  // Last, tucked behind the others until something is moved to the trash.
+                  collapsed: trashed.length === 0,
+                  icon: <TrashIcon className="size-3.5" />,
+                  panel: (
+                    <>
+                      {renderPanel(trashed, undefined, { inTrashView: true, closing: emptyingTrash })}
+                      {/* Kept while the emptied trash fades out of view (its tab tucks away). */}
+                      {loaded && (
+                        <div className="border-t border-line pt-4 pb-4">
+                          <Button
+                            variant="danger"
+                            icon={<TrashIcon />}
+                            onClick={handleEmptyTrash}
+                            aria-disabled={emptyingTrash}
+                            className="w-full text-balance"
+                          >
+                            {t.tasks.emptyTrash(emptyTrashCount)}
+                          </Button>
+                        </div>
+                      )}
+                    </>
                   ),
                 },
               ]}

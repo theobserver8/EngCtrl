@@ -46,6 +46,15 @@ export function CloseIcon(props: IconProps) {
   );
 }
 
+export function ChecklistIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M2.5 4.25l1.25 1.25L6 3.25M2.5 8.75l1.25 1.25L6 7.75M3 13.25h2" />
+      <path d="M8.5 4.5h5M8.5 9h5M8.5 13.25h5" />
+    </Icon>
+  );
+}
+
 export function StarIcon(props: IconProps) {
   return (
     <Icon {...props}>
@@ -59,6 +68,15 @@ export function TrashIcon(props: IconProps) {
     <Icon {...props}>
       <path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5" />
       <path d="M7 7v3.5M9 7v3.5" />
+    </Icon>
+  );
+}
+
+export function RestoreIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M5.5 3.5l-2.5 2.5 2.5 2.5" />
+      <path d="M3 6h6.25a3.5 3.5 0 0 1 0 7H6" />
     </Icon>
   );
 }
