@@ -39,6 +39,8 @@ export interface TabItem<T extends string> {
 
 export interface TabsHandle {
   focusSelectedTab: () => void;
+  /** Focuses a tab without selecting it (e.g. where the selection is about to move). */
+  focusTab: (id: string) => void;
 }
 
 interface TabsProps<T extends string> {
@@ -205,7 +207,10 @@ function Tabs<T extends string>({ label, tabs, selected, onSelect, aside, ref }:
 
   useImperativeHandle(
     ref,
-    () => ({ focusSelectedTab: () => tabRefs.current.get(selected)?.focus() }),
+    () => ({
+      focusSelectedTab: () => tabRefs.current.get(selected)?.focus(),
+      focusTab: (id: string) => tabRefs.current.get(id as T)?.focus(),
+    }),
     [selected],
   );
 

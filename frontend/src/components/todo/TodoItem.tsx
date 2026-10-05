@@ -17,6 +17,8 @@ interface TodoItemProps {
   leaveOnUnfavorite?: boolean;
   /** Row of the trash view: only the restore action, and restoring closes the row (it leaves). */
   inTrashView?: boolean;
+  /** Closes the row from outside (e.g. the whole trash being emptied). */
+  closing?: boolean;
   /** Open the row with an animation when it mounts (false for the rows of the first load). */
   animateEnter?: boolean;
 }
@@ -30,11 +32,13 @@ function TodoItem({
   onRestore,
   leaveOnUnfavorite = false,
   inTrashView = false,
+  closing = false,
   animateEnter = false,
 }: TodoItemProps) {
   const titleId = useId();
   const descriptionId = useId();
-  const [leaving, setLeaving] = useState(false);
+  const [leavingNow, setLeaving] = useState(false);
+  const leaving = leavingNow || closing;
   // Captured once: adding an animation class to an already mounted row would replay it.
   const [enterAnimated] = useState(animateEnter);
 
@@ -92,7 +96,7 @@ function TodoItem({
         <div
           // Left rule: red while in the trash (it takes precedence), lime for a favourite.
           className={`group relative -mx-3 rounded-control px-3 transition-colors hover:bg-brand-soft/50 before:absolute before:inset-y-3 before:left-0 before:w-[3px] before:rounded-full before:transition-[background-color,opacity] before:duration-(--motion-base) ${
-            todo.trashed ? "before:bg-danger-soft" : todo.favorite ? "before:bg-lime" : "before:opacity-0"
+            todo.trashed ? "before:bg-danger/50" : todo.favorite ? "before:bg-lime" : "before:opacity-0"
           }`}
         >
           <div className="flex items-start gap-2">

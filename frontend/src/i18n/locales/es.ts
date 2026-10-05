@@ -50,11 +50,14 @@ export const es: Messages = {
     unavailable: "No se ha podido cargar el registro.",
     trash: (title) => `Mover a la papelera: ${title}`,
     restore: (title) => `Restaurar de la papelera: ${title}`,
+    emptyTrash: "¿Vaciar papelera y eliminar todas las tareas?",
   },
   announcements: {
     added: (title) => `Tarea añadida: ${title}`,
     trashed: (title) => `Movida a la papelera: ${title}`,
     restored: (title) => `Restaurada de la papelera: ${title}`,
+    trashEmptied: (count) =>
+      `Papelera vaciada: ${count} ${count === 1 ? "tarea eliminada" : "tareas eliminadas"}`,
     favorited: (title) => `Añadida a favoritas: ${title}`,
     unfavorited: (title) => `Quitada de favoritas: ${title}`,
   },

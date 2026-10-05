@@ -1,4 +1,4 @@
-import { cleanup, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { SEED_TODOS } from "./test/fakeApi";
 import { getRow, renderApp, visiblePanel, visibleTitles } from "./test/renderApp";
@@ -275,6 +275,66 @@ describe("trash (task 2)", () => {
     expect(screen.getByRole("tab", { name: /tasks/i })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("tab", { name: /tasks/i })).toHaveFocus();
     expect(screen.getByRole("status")).toHaveTextContent("Restored from the trash: Check rebar");
+  });
+
+  it("empties the trash with a single request and returns to the tasks", async () => {
+    const { api, user } = await renderApp({
+      todos: SEED_TODOS.map((todo) => ({ ...todo, trashed: todo.id !== 2 })),
+    });
+    await user.click(screen.getByRole("tab", { name: /trash · 02/i }));
+
+    await user.click(screen.getByRole("button", { name: "Empty the trash and delete all its tasks?" }));
+
+    await waitFor(() => expect(screen.queryByRole("tab", { name: /trash/i })).not.toBeInTheDocument());
+    expect(api.mutations("DELETE")).toEqual([{ method: "DELETE", path: "/todos", query: "?ids=1&ids=3" }]);
+    expect(api.todos.map((todo) => todo.id)).toEqual([2]);
+    expect(screen.getByRole("tab", { name: /tasks · 01/i })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: /tasks/i })).toHaveFocus();
+    expect(visibleTitles()).toEqual(["Concrete test"]);
+    expect(screen.getByRole("status")).toHaveTextContent("Trash emptied: 2 tasks deleted");
+  });
+
+  it("sends a single request on a double click", async () => {
+    const { api, user } = await renderApp({
+      todos: SEED_TODOS.map((todo) => ({ ...todo, trashed: todo.id !== 2 })),
+    });
+    await user.click(screen.getByRole("tab", { name: /trash · 02/i }));
+    const button = screen.getByRole("button", { name: "Empty the trash and delete all its tasks?" });
+
+    act(() => {
+      button.click();
+      button.click();
+    });
+
+    await waitFor(() => expect(screen.queryByRole("tab", { name: /trash/i })).not.toBeInTheDocument());
+    expect(api.mutations("DELETE")).toHaveLength(1);
+  });
+
+  it("empties the trash even if one of its tasks was already deleted elsewhere", async () => {
+    const { api, user } = await renderApp({
+      todos: SEED_TODOS.map((todo) => ({ ...todo, trashed: todo.id !== 2 })),
+    });
+    api.removeOnServer(1);
+    await user.click(screen.getByRole("tab", { name: /trash · 02/i }));
+
+    await user.click(screen.getByRole("button", { name: "Empty the trash and delete all its tasks?" }));
+
+    await waitFor(() => expect(screen.queryByRole("tab", { name: /trash/i })).not.toBeInTheDocument());
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("brings the trash back if emptying it fails", async () => {
+    const { api, user } = await renderApp({
+      todos: SEED_TODOS.map((todo) => ({ ...todo, trashed: todo.id !== 2 })),
+    });
+    await user.click(screen.getByRole("tab", { name: /trash · 02/i }));
+    api.state.offline = true;
+
+    await user.click(screen.getByRole("button", { name: "Empty the trash and delete all its tasks?" }));
+
+    expect(await screen.findByRole("alert")).toBeInTheDocument();
+    expect(await screen.findByRole("tab", { name: /trash · 02/i })).toBeInTheDocument();
+    expect(api.todos.map((todo) => todo.id)).toEqual([1, 2, 3]);
   });
 
   it("takes the task out of the trash again if the move cannot be saved", async () => {

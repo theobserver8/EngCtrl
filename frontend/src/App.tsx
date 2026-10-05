@@ -6,12 +6,14 @@ import TodoList from "./components/todo/TodoList";
 import TodoListSkeleton from "./components/todo/TodoListSkeleton";
 import EmptyState from "./components/ui/EmptyState";
 import ErrorBanner from "./components/ui/ErrorBanner";
+import Button from "./components/ui/Button";
 import { StarIcon, TrashIcon } from "./components/ui/icons";
 import Tabs, { type TabsHandle } from "./components/ui/Tabs";
 import { useTodos } from "./hooks/useTodos";
 import { useI18n } from "./i18n/useI18n";
 import type { Todo, TodoDraft } from "./types/todo";
 import { getErrorMessage } from "./utils/errorMessage";
+import { MOTION_MS, prefersReducedMotion } from "./utils/motion";
 
 type TaskView = "all" | "favorites" | "trash";
 
@@ -30,11 +32,16 @@ function App() {
     toggleFavorite,
     trashTodo,
     restoreTodo,
+    emptyTrash,
     clearError,
   } = useTodos();
   // Polite live region so screen reader users hear the outcome of their actions.
   const [announcement, setAnnouncement] = useState("");
   const [view, setView] = useState<TaskView>("all");
+  // The trash rows are closing before the trash is emptied: the button ignores further clicks.
+  // The ref guards at once, even against clicks that arrive before the next render.
+  const [emptyingTrash, setEmptyingTrash] = useState(false);
+  const emptyingTrashRef = useRef(false);
   const tabsRef = useRef<TabsHandle>(null);
   // Rows of the first load appear at once; rows added or moved afterwards open smoothly.
   const [animateNewRows, setAnimateNewRows] = useState(false);
@@ -77,6 +84,24 @@ function App() {
     if (await restoreTodo(todo)) setAnnouncement(t.announcements.restored(todo.title));
   };
 
+  const handleEmptyTrash = () => {
+    if (emptyingTrashRef.current) return;
+    const count = trashed.length;
+    emptyingTrashRef.current = true;
+    setEmptyingTrash(true);
+    const empty = async () => {
+      // The trash tab tucks away once empty and the view returns to the tasks: hand the focus to
+      // that tab now, before the button it is on goes away.
+      tabsRef.current?.focusTab("all");
+      if (await emptyTrash()) setAnnouncement(t.announcements.trashEmptied(count));
+      emptyingTrashRef.current = false;
+      setEmptyingTrash(false);
+    };
+    // Every row closes first, then they are deleted at once (a single request).
+    if (prefersReducedMotion()) void empty();
+    else window.setTimeout(() => void empty(), MOTION_MS.slow);
+  };
+
   const listProps = {
     pendingIds,
     onToggle: toggleTodo,
@@ -90,7 +115,7 @@ function App() {
   const renderPanel = (
     list: Todo[],
     empty?: ReactNode,
-    variant?: { leaveOnUnfavorite?: boolean; inTrashView?: boolean },
+    variant?: { leaveOnUnfavorite?: boolean; inTrashView?: boolean; closing?: boolean },
   ) => {
     if (status === "loading") return <TodoListSkeleton label={t.tasks.loading} />;
     if (loadFailed)
@@ -182,7 +207,25 @@ function App() {
                   // Last, tucked behind the others until something is moved to the trash.
                   collapsed: trashed.length === 0,
                   icon: <TrashIcon className="size-3.5" />,
-                  panel: renderPanel(trashed, undefined, { inTrashView: true }),
+                  panel: (
+                    <>
+                      {renderPanel(trashed, undefined, { inTrashView: true, closing: emptyingTrash })}
+                      {/* Kept while the emptied trash fades out of view (its tab tucks away). */}
+                      {loaded && (
+                        <div className="border-t border-line pt-4 pb-4">
+                          <Button
+                            variant="danger"
+                            icon={<TrashIcon />}
+                            onClick={handleEmptyTrash}
+                            aria-disabled={emptyingTrash}
+                            className="w-full text-balance"
+                          >
+                            {t.tasks.emptyTrash}
+                          </Button>
+                        </div>
+                      )}
+                    </>
+                  ),
                 },
               ]}
             />
