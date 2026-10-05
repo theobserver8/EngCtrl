@@ -31,7 +31,7 @@ export interface TabItem<T extends string> {
   /**
    * Tucked behind the tab before it, only a sliver showing, and not selectable (e.g. a view with
    * nothing to show yet). It slides out when this turns false and back in when it turns true.
-   * Never set on the first tab.
+   * Consecutive collapsed tabs stack, each one behind the previous. Never set on the first tab.
    */
   collapsed?: boolean;
   panel: ReactNode;
@@ -39,6 +39,8 @@ export interface TabItem<T extends string> {
 
 export interface TabsHandle {
   focusSelectedTab: () => void;
+  /** Focuses a tab without selecting it (e.g. where the selection is about to move). */
+  focusTab: (id: string) => void;
 }
 
 interface TabsProps<T extends string> {
@@ -205,7 +207,10 @@ function Tabs<T extends string>({ label, tabs, selected, onSelect, aside, ref }:
 
   useImperativeHandle(
     ref,
-    () => ({ focusSelectedTab: () => tabRefs.current.get(selected)?.focus() }),
+    () => ({
+      focusSelectedTab: () => tabRefs.current.get(selected)?.focus(),
+      focusTab: (id: string) => tabRefs.current.get(id as T)?.focus(),
+    }),
     [selected],
   );
 
@@ -232,10 +237,11 @@ function Tabs<T extends string>({ label, tabs, selected, onSelect, aside, ref }:
     <div>
       <div className="flex items-end justify-between gap-3">
         <div role="tablist" aria-label={label} onKeyDown={handleKeyDown} className="flex min-w-0 items-end gap-1">
-          {tabs.map((tab) => (
+          {tabs.map((tab, index) => (
             <TabButton
               key={tab.id}
               tab={tab}
+              stackOrder={tabs.length - index}
               id={tabId(tab.id)}
               panelId={panelId(tab.id)}
               isSelected={tab.id === selected}
@@ -250,11 +256,14 @@ function Tabs<T extends string>({ label, tabs, selected, onSelect, aside, ref }:
         {aside && <div className="pb-3">{aside}</div>}
       </div>
 
-      {/* The corner under the first tab stays square so the tab flows into the frame. */}
+      {/* The corner under the first tab stays square: every tab is outlined, so its border always */}
+      {/* runs straight down into the frame's, selected or not. */}
       {/* Clipped: the inactive panels lie (invisible) on top of the active one and may be taller. */}
+      {/* Layered above the collapsed tabs (their bottom edge must not hide its top border) and */}
+      {/* below the selected one (z-10), which opens into it. */}
       <div
         ref={frameRef}
-        className={`relative overflow-clip rounded-control border border-line ${selectedIndex === 0 ? "rounded-tl-none" : ""}`}
+        className="relative z-5 overflow-clip rounded-control rounded-tl-none border border-line"
       >
         {tabs.map((tab) => {
           const isSelected = tab.id === selected;
@@ -289,6 +298,8 @@ interface TabButtonProps<T extends string> {
   id: string;
   panelId: string;
   isSelected: boolean;
+  /** Higher for earlier tabs: a collapsed tab lies behind the ones before it. Below 5 (the frame). */
+  stackOrder: number;
   onSelect: (id: T) => void;
   buttonRef: (node: HTMLButtonElement | null) => void;
 }
@@ -299,7 +310,15 @@ interface CountChange {
   direction: "up" | "down";
 }
 
-function TabButton<T extends string>({ tab, id, panelId, isSelected, onSelect, buttonRef }: TabButtonProps<T>) {
+function TabButton<T extends string>({
+  tab,
+  id,
+  panelId,
+  isSelected,
+  stackOrder,
+  onSelect,
+  buttonRef,
+}: TabButtonProps<T>) {
   const { count, signalChanges = false, collapsed = false } = tab;
   // Natural width of the tab, kept up to date (language, counter): its wrapper animates to it.
   const ownRef = useRef<HTMLButtonElement>(null);
@@ -327,13 +346,17 @@ function TabButton<T extends string>({ tab, id, panelId, isSelected, onSelect, b
     }
   }
 
+  const compactClass = tab.icon ? "max-sm:sr-only" : "";
   const stateClasses = isSelected
     ? "z-10 border-line bg-sheet text-ink"
     : collapsed
       ? // Shifted back by its own width: only its right edge shows, an outlined sliver, like a
         // sheet filed behind the previous tab.
         "translate-x-[calc(-100%+2px)] border-line bg-paper text-ink-faint"
-      : "border-transparent text-ink-faint hover:bg-brand-soft/60 hover:text-ink";
+      : // Outlined like every tab, so a tab collapsed behind it runs up to its border. Opaque, also
+        // on hover (brand-soft at 60% mixed over the sheet rather than see-through), so the
+        // collapsed tab behind it does not show through.
+        "border-line bg-sheet text-ink-faint hover:bg-[color-mix(in_srgb,var(--color-brand-soft)_60%,var(--color-sheet))] hover:text-ink";
 
   return (
     // Opens and closes its width (0 <-> the tab's measured width) while the tab slides back by its
@@ -343,12 +366,15 @@ function TabButton<T extends string>({ tab, id, panelId, isSelected, onSelect, b
     // padding box: the padding leaves room for the focus ring and the net-zero margins keep the
     // spacing. The left padding reaches behind the previous tab's rounded corner, so a collapsed
     // tab's top edge runs on until it meets that tab's border. Vertically it overflows freely
-    // (the tab overlaps the frame's top border).
+    // (the tab overlaps the frame's top border). Collapsed, it takes 2px more than nothing (a
+    // smaller negative margin), so tabs stacked one behind another each show the same sliver.
     <div
       aria-hidden={collapsed || undefined}
       inert={collapsed}
       style={{ width: collapsed ? 0 : (width ?? undefined) }}
-      className="-mr-1 -ml-3 box-content flex shrink-0 overflow-x-clip pr-1 pl-3 transition-[width] duration-(--motion-view) ease-in-out-soft"
+      className={`-ml-3 box-content flex shrink-0 overflow-x-clip pr-1 pl-3 transition-[width,margin-right] duration-(--motion-view) ease-in-out-soft ${
+        collapsed ? "-mr-0.5" : "-mr-1"
+      }`}
     >
       <button
         ref={(node) => {
@@ -364,6 +390,7 @@ function TabButton<T extends string>({ tab, id, panelId, isSelected, onSelect, b
         onClick={() => {
           if (!collapsed) onSelect(tab.id);
         }}
+        style={isSelected ? undefined : { zIndex: stackOrder }}
         // -mb-px: the selected tab covers the frame's top border, opening the folder into its panel.
         className={`group focus-ring relative -mb-px flex h-10 cursor-pointer shrink-0 items-center rounded-t-control border border-b-0 px-3 font-mono text-[11px] font-medium tracking-[0.14em] whitespace-nowrap uppercase tabular-nums sm:px-4 ${TAB_TRANSITION} ${stateClasses}`}
       >
@@ -389,16 +416,19 @@ function TabButton<T extends string>({ tab, id, panelId, isSelected, onSelect, b
         />
         <span className="relative flex items-center gap-2">
           {tab.icon}
-          {tab.label}
+          {/* On phones a tab with an icon shows only the icon and the count, so every tab fits; */}
+          {/* the label stays in its accessible name. */}
+          <span className={compactClass}>{tab.label}</span>
           {count === undefined ? (
             // Reserves the counter's width while loading, so the tabs do not shift when it arrives.
             <span aria-hidden="true" className="opacity-0">
-              ·&nbsp;00
+              <span className={compactClass}>·&nbsp;</span>00
             </span>
           ) : (
             // The space is ignored by the flex layout (gap spaces it) but keeps the accessible name readable.
             <span className="flex overflow-hidden motion-safe:animate-[fade-in_var(--motion-base)_var(--ease-out-soft)]">
-              {" "}·&nbsp;
+              {" "}
+              <span className={compactClass}>·&nbsp;</span>
               <RollingNumber value={count} format={formatCount} />
             </span>
           )}

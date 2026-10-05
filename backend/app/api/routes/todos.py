@@ -1,6 +1,7 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Path, Response, status
+from fastapi import APIRouter, Path, Query, Response, status
+from pydantic import Field
 
 from app.api.dependencies import TodoRepositoryDep
 from app.schemas.todo import Todo, TodoCreate, TodoUpdate
@@ -8,6 +9,11 @@ from app.schemas.todo import Todo, TodoCreate, TodoUpdate
 router = APIRouter(prefix="/todos", tags=["todos"])
 
 TodoId = Annotated[int, Path(ge=1, description="Todo identifier")]
+MAX_BULK_DELETE = 1000
+TodoIds = Annotated[
+    list[Annotated[int, Field(ge=1)]],
+    Query(min_length=1, max_length=MAX_BULK_DELETE, description="Identifiers of the todos to delete"),
+]
 
 NOT_FOUND_RESPONSE = {status.HTTP_404_NOT_FOUND: {"description": "Todo not found"}}
 
@@ -28,6 +34,16 @@ def create_todo(payload: TodoCreate, repository: TodoRepositoryDep) -> Todo:
 def update_todo(todo_id: TodoId, payload: TodoUpdate, repository: TodoRepositoryDep) -> Todo:
     """Partially update a todo (e.g. mark it as completed)."""
     return repository.update(todo_id, payload)
+
+
+@router.delete("", status_code=status.HTTP_204_NO_CONTENT, response_class=Response)
+def delete_todos(ids: TodoIds, repository: TodoRepositoryDep) -> Response:
+    """Delete several todos in one request (e.g. emptying the trash): `?ids=1&ids=2`.
+
+    Ids with no todo are ignored, so retrying or racing another client never fails.
+    """
+    repository.delete_many(set(ids))
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.delete(

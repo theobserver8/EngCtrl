@@ -41,20 +41,26 @@ export const es: Messages = {
     heading: "Tareas",
     views: "Vistas de tareas",
     favoritesHeading: "Favoritas",
+    trashHeading: "Papelera",
     favorite: (title) => `Marcar como favorita: ${title}`,
     unfavorite: (title) => `Quitar de favoritas: ${title}`,
     loading: "Cargando tareas…",
     syncing: "Sincronizando",
     empty: "Todavía no hay tareas. Añade la primera arriba.",
     unavailable: "No se ha podido cargar el registro.",
-    delete: (title) => `Eliminar tarea: ${title}`,
-    confirmDelete: (title) => `Confirmar eliminación de la tarea: ${title}`,
-    cancelDelete: (title) => `Cancelar eliminación de la tarea: ${title}`,
-    confirmDeleteShort: "¿Borrar?",
+    trash: (title) => `Mover a la papelera: ${title}`,
+    restore: (title) => `Restaurar de la papelera: ${title}`,
+    emptyTrash: (count) =>
+      count === 1
+        ? "¿Vaciar la papelera y eliminar su tarea?"
+        : `¿Vaciar la papelera y eliminar sus ${count} tareas?`,
   },
   announcements: {
     added: (title) => `Tarea añadida: ${title}`,
-    deleted: (title) => `Tarea eliminada: ${title}`,
+    trashed: (title) => `Movida a la papelera: ${title}`,
+    restored: (title) => `Restaurada de la papelera: ${title}`,
+    trashEmptied: (count) =>
+      `Papelera vaciada: ${count} ${count === 1 ? "tarea eliminada" : "tareas eliminadas"}`,
     favorited: (title) => `Añadida a favoritas: ${title}`,
     unfavorited: (title) => `Quitada de favoritas: ${title}`,
   },

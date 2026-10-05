@@ -6,9 +6,14 @@ interface TodoListProps {
   pendingIds: ReadonlySet<number>;
   onToggle: (todo: Todo) => void;
   onToggleFavorite: (todo: Todo) => void;
-  onDelete: (todo: Todo) => void;
+  onTrash: (todo: Todo) => void;
+  onRestore: (todo: Todo) => void;
   /** Rows close before being unmarked as favourite (this is the favourites list). */
   leaveOnUnfavorite?: boolean;
+  /** This is the trash list: rows only offer to restore, and close when restored. */
+  inTrashView?: boolean;
+  /** Close every row (the list is about to be emptied). */
+  closing?: boolean;
   /** Animate rows that mount from now on (off during the first load of the list). */
   animateNewRows?: boolean;
 }
@@ -18,8 +23,11 @@ function TodoList({
   pendingIds,
   onToggle,
   onToggleFavorite,
-  onDelete,
+  onTrash,
+  onRestore,
   leaveOnUnfavorite = false,
+  inTrashView = false,
+  closing = false,
   animateNewRows = false,
 }: TodoListProps) {
   return (
@@ -32,8 +40,11 @@ function TodoList({
           isPending={pendingIds.has(todo.id)}
           onToggle={onToggle}
           onToggleFavorite={onToggleFavorite}
-          onDelete={onDelete}
+          onTrash={onTrash}
+          onRestore={onRestore}
           leaveOnUnfavorite={leaveOnUnfavorite}
+          inTrashView={inTrashView}
+          closing={closing}
           animateEnter={animateNewRows}
         />
       ))}

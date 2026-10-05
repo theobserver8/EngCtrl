@@ -53,8 +53,9 @@ class TodoUpdate(BaseModel):
     description: Description = None
     completed: bool | None = None
     favorite: bool | None = None
+    trashed: bool | None = None
 
-    @field_validator("title", "completed", "favorite")
+    @field_validator("title", "completed", "favorite", "trashed")
     @classmethod
     def reject_explicit_null(cls, value: Any) -> Any:
         # Omitting a field means "keep it"; sending null for a required field is an error.
@@ -76,4 +77,7 @@ class TodoUpdate(BaseModel):
 class Todo(TodoBase):
     """A persisted todo."""
 
+    # In the trash: still listed, pending a permanent delete. Not part of TodoCreate (a todo is
+    # never created in the trash); moved in and out with a PATCH, which keeps the other fields.
+    trashed: bool = False
     id: int
