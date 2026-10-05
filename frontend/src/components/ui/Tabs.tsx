@@ -255,12 +255,14 @@ function TabButton<T extends string>({ tab, id, panelId, isSelected, onSelect, b
     // Opens and closes its width (0 <-> the tab's measured width) with the tab aligned to its end,
     // so a collapsed tab slides out from behind the previous one. Clipped horizontally only, to its
     // padding box: the padding leaves room for the focus ring and the net-zero margins keep the
-    // spacing. Vertically it overflows freely (the tab overlaps the frame's top border).
+    // spacing. The left padding reaches behind the previous tab's rounded corner, so a collapsed
+    // tab's top edge runs on until it meets that tab's border. Vertically it overflows freely
+    // (the tab overlaps the frame's top border).
     <div
       aria-hidden={collapsed || undefined}
       inert={collapsed}
       style={{ width: collapsed ? 0 : (width ?? undefined) }}
-      className="-mx-1 box-content flex justify-end overflow-x-clip px-1 transition-[width] duration-(--motion-view) ease-in-out-soft"
+      className="-mr-1 -ml-3 box-content flex justify-end overflow-x-clip pr-1 pl-3 transition-[width] duration-(--motion-view) ease-in-out-soft"
     >
       <button
         ref={(node) => {
