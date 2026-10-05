@@ -11,6 +11,8 @@ export interface Todo {
   description: string | null;
   completed: boolean;
   favorite: boolean;
+  /** In the trash: still listed, pending a permanent delete. Never set when creating. */
+  trashed: boolean;
 }
 
 export type TodoCreate = Pick<Todo, "title"> &

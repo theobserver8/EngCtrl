@@ -4,13 +4,15 @@ import type { Todo } from "../types/todo";
 export interface RecordedCall {
   method: string;
   path: string;
+  /** Query string, e.g. "?ids=1&ids=2" ("" when there is none). */
+  query?: string;
   body?: unknown;
 }
 
 export const SEED_TODOS: Todo[] = [
-  { id: 1, title: "Inspect formwork", description: null, completed: false, favorite: false },
-  { id: 2, title: "Concrete test", description: "Slab, level 2", completed: true, favorite: false },
-  { id: 3, title: "Check rebar", description: null, completed: false, favorite: true },
+  { id: 1, title: "Inspect formwork", description: null, completed: false, favorite: false, trashed: false },
+  { id: 2, title: "Concrete test", description: "Slab, level 2", completed: true, favorite: false, trashed: false },
+  { id: 3, title: "Check rebar", description: null, completed: false, favorite: true, trashed: false },
 ];
 
 const json = (status: number, body?: unknown) =>
@@ -35,7 +37,7 @@ export function createFakeApi(seed: Todo[] = SEED_TODOS) {
     const url = new URL(String(input));
     const method = init.method ?? "GET";
     const body = init.body ? JSON.parse(String(init.body)) : undefined;
-    calls.push({ method, path: url.pathname, body });
+    calls.push({ method, path: url.pathname, ...(url.search && { query: url.search }), body });
 
     if (state.offline) throw new TypeError("Failed to fetch");
 
@@ -52,9 +54,22 @@ export function createFakeApi(seed: Todo[] = SEED_TODOS) {
     if (id === undefined) {
       if (method === "GET") return json(200, todos);
       if (method === "POST") {
-        const todo: Todo = { description: null, completed: false, favorite: false, ...body, id: nextId++ };
+        const todo: Todo = {
+          description: null,
+          completed: false,
+          favorite: false,
+          trashed: false,
+          ...body,
+          id: nextId++,
+        };
         todos = [...todos, todo];
         return json(201, todo);
+      }
+      if (method === "DELETE") {
+        const ids = url.searchParams.getAll("ids").map(Number);
+        if (ids.length === 0) return json(422, { detail: "ids required" });
+        todos = todos.filter((todo) => !ids.includes(todo.id));
+        return new Response(null, { status: 204 });
       }
       return json(405, { detail: "Method Not Allowed" });
     }

@@ -12,4 +12,10 @@ export const todosApi = {
     request<Todo>(`${RESOURCE}/${id}`, { method: "PATCH", body: changes }),
 
   remove: (id: number) => request<void>(`${RESOURCE}/${id}`, { method: "DELETE" }),
+
+  /** Deletes several todos in a single request (`?ids=1&ids=2`). Unknown ids are ignored. */
+  removeMany: (ids: readonly number[]) => {
+    const query = new URLSearchParams(ids.map((id) => ["ids", String(id)]));
+    return request<void>(`${RESOURCE}?${query}`, { method: "DELETE" });
+  },
 };

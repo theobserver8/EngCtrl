@@ -22,6 +22,11 @@ export interface UseTodosResult {
   /** Optimistic toggles: resolve to true when the change was saved. */
   toggleTodo: (todo: Todo) => Promise<boolean>;
   toggleFavorite: (todo: Todo) => Promise<boolean>;
+  /** Optimistic moves in and out of the trash; the other fields are kept. */
+  trashTodo: (todo: Todo) => Promise<boolean>;
+  restoreTodo: (todo: Todo) => Promise<boolean>;
+  /** Deletes every todo in the trash with a single request. Resolves to true once they are gone. */
+  emptyTrash: () => Promise<boolean>;
   /** Resolves to true when the todo is gone from the server. */
   deleteTodo: (todo: Todo) => Promise<boolean>;
   clearError: () => void;
@@ -166,6 +171,35 @@ export function useTodos(): UseTodosResult {
     [patchOptimistic],
   );
 
+  const trashTodo = useCallback(
+    (todo: Todo) => patchOptimistic(todo, { trashed: true }),
+    [patchOptimistic],
+  );
+
+  const restoreTodo = useCallback(
+    (todo: Todo) => patchOptimistic(todo, { trashed: false }),
+    [patchOptimistic],
+  );
+
+  const emptyTrash = useCallback(async () => {
+    // The trash as it is on screen when the user confirms.
+    const trashed = todos.filter((todo) => todo.trashed);
+    if (trashed.length === 0) return true;
+    const ids = new Set(trashed.map((todo) => todo.id));
+
+    // Optimistic removal, rolled back like a single delete (server order is id order).
+    setTodos((prev) => prev.filter((t) => !ids.has(t.id)));
+    // Ids already deleted elsewhere are ignored by the server: no 404 to handle here.
+    const deleted = await runAction(() => todosApi.removeMany([...ids]));
+    if (!deleted) {
+      setTodos((prev) => {
+        const missing = trashed.filter((todo) => !prev.some((t) => t.id === todo.id));
+        return [...prev, ...missing].sort((a, b) => a.id - b.id);
+      });
+    }
+    return deleted;
+  }, [todos, runAction]);
+
   const deleteTodo = useCallback(
     async (todo: Todo) => {
       // Optimistic removal. Server order is id order (ids only grow), so a rollback can
@@ -206,6 +240,9 @@ export function useTodos(): UseTodosResult {
     addTodo,
     toggleTodo,
     toggleFavorite,
+    trashTodo,
+    restoreTodo,
+    emptyTrash,
     deleteTodo,
     clearError,
   };
