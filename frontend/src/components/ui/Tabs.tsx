@@ -15,6 +15,10 @@ import RollingNumber from "./RollingNumber";
 // Mirrors --ease-in-out-soft in index.css (Web Animations take the curve, not the variable).
 const EASE_IN_OUT_SOFT = "cubic-bezier(0.65, 0, 0.35, 1)";
 
+// Colours at the unhurried hover pace; the slide in step with the wrapper's width (--motion-view).
+const TAB_TRANSITION =
+  "[transition:color_var(--motion-gentle)_var(--ease-in-out-soft),background-color_var(--motion-gentle)_var(--ease-in-out-soft),border-color_var(--motion-gentle)_var(--ease-in-out-soft),translate_var(--motion-view)_var(--ease-in-out-soft)]";
+
 export interface TabItem<T extends string> {
   id: T;
   label: string;
@@ -250,13 +254,16 @@ function TabButton<T extends string>({ tab, id, panelId, isSelected, onSelect, b
   const stateClasses = isSelected
     ? "z-10 border-line bg-sheet text-ink"
     : collapsed
-      ? // Only its right edge shows: an outlined sliver, like a sheet filed behind the previous tab.
-        "translate-x-0.5 border-line bg-paper text-ink-faint"
+      ? // Shifted back by its own width: only its right edge shows, an outlined sliver, like a
+        // sheet filed behind the previous tab.
+        "translate-x-[calc(-100%+2px)] border-line bg-paper text-ink-faint"
       : "border-transparent text-ink-faint hover:bg-brand-soft/60 hover:text-ink";
 
   return (
-    // Opens and closes its width (0 <-> the tab's measured width) with the tab aligned to its end,
-    // so a collapsed tab slides out from behind the previous one. Clipped horizontally only, to its
+    // Opens and closes its width (0 <-> the tab's measured width) while the tab slides back by its
+    // own width in step, so a collapsed tab slides out from behind the previous one. The tab stays
+    // aligned to the start: its left edge never moves (it lines up with the frame) and a change of
+    // width (e.g. another language) only moves its right edge. Clipped horizontally only, to its
     // padding box: the padding leaves room for the focus ring and the net-zero margins keep the
     // spacing. The left padding reaches behind the previous tab's rounded corner, so a collapsed
     // tab's top edge runs on until it meets that tab's border. Vertically it overflows freely
@@ -265,7 +272,7 @@ function TabButton<T extends string>({ tab, id, panelId, isSelected, onSelect, b
       aria-hidden={collapsed || undefined}
       inert={collapsed}
       style={{ width: collapsed ? 0 : (width ?? undefined) }}
-      className="-mr-1 -ml-3 box-content flex shrink-0 justify-end overflow-x-clip pr-1 pl-3 transition-[width] duration-(--motion-view) ease-in-out-soft"
+      className="-mr-1 -ml-3 box-content flex shrink-0 overflow-x-clip pr-1 pl-3 transition-[width] duration-(--motion-view) ease-in-out-soft"
     >
       <button
         ref={(node) => {
@@ -282,7 +289,7 @@ function TabButton<T extends string>({ tab, id, panelId, isSelected, onSelect, b
           if (!collapsed) onSelect(tab.id);
         }}
         // -mb-px: the selected tab covers the frame's top border, opening the folder into its panel.
-        className={`group focus-ring relative -mb-px flex h-10 cursor-pointer shrink-0 items-center rounded-t-control border border-b-0 px-3 font-mono text-[11px] font-medium tracking-[0.14em] whitespace-nowrap uppercase tabular-nums transition-[color,background-color,border-color,translate] duration-(--motion-gentle) ease-in-out-soft sm:px-4 ${stateClasses}`}
+        className={`group focus-ring relative -mb-px flex h-10 cursor-pointer shrink-0 items-center rounded-t-control border border-b-0 px-3 font-mono text-[11px] font-medium tracking-[0.14em] whitespace-nowrap uppercase tabular-nums sm:px-4 ${TAB_TRANSITION} ${stateClasses}`}
       >
         {change && (
           <span

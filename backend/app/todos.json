@@ -18,7 +18,7 @@
     {
       "title": "Learn Vite",
       "description": null,
-      "completed": true,
+      "completed": false,
       "favorite": false,
       "id": 3
     },
@@ -39,14 +39,14 @@
     {
       "title": "Learn PostgreSQL",
       "description": null,
-      "completed": true,
+      "completed": false,
       "favorite": false,
       "id": 6
     },
     {
       "title": "Learn Tailwind CSS",
       "description": null,
-      "completed": true,
+      "completed": false,
       "favorite": false,
       "id": 7
     }
