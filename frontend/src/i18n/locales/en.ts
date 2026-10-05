@@ -48,7 +48,8 @@ export const en = {
     unavailable: "The register could not be loaded.",
     trash: (title: string) => `Move to the trash: ${title}`,
     restore: (title: string) => `Restore from the trash: ${title}`,
-    emptyTrash: "Empty the trash and delete all its tasks?",
+    emptyTrash: (count: number) =>
+      count === 1 ? "Empty the trash and delete its task?" : `Empty the trash and delete its ${count} tasks?`,
   },
   announcements: {
     added: (title: string) => `Task added: ${title}`,

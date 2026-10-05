@@ -32,7 +32,7 @@ Beyond the brief:
   WCAG AA contrast and support for the *reduced motion* setting.
 - **Tabs that appear when needed**: the Favourites and Trash tabs stay tucked behind the previous
   tab while they are empty, and slide out with their first task.
-- **Tests**: 69 backend tests (pytest) and 58 frontend tests (Vitest + Testing Library).
+- **Tests**: 69 backend tests (pytest) and 59 frontend tests (Vitest + Testing Library).
 
 ## Getting started
 

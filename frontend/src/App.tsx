@@ -51,6 +51,10 @@ function App() {
 
   const favorites = todos.filter((todo) => todo.favorite);
   const trashed = todos.filter((todo) => todo.trashed);
+  // Count shown on the empty-trash button. It keeps the last one while the emptied trash fades out
+  // of view, instead of reading "0" for a moment (derived during render, not in an effect).
+  const [emptyTrashCount, setEmptyTrashCount] = useState(trashed.length);
+  if (trashed.length > 0 && trashed.length !== emptyTrashCount) setEmptyTrashCount(trashed.length);
   const completedCount = todos.filter((todo) => todo.completed).length;
   const loadFailed = status === "error";
   const loaded = status === "success";
@@ -220,7 +224,7 @@ function App() {
                             aria-disabled={emptyingTrash}
                             className="w-full text-balance"
                           >
-                            {t.tasks.emptyTrash}
+                            {t.tasks.emptyTrash(emptyTrashCount)}
                           </Button>
                         </div>
                       )}

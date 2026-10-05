@@ -50,7 +50,10 @@ export const es: Messages = {
     unavailable: "No se ha podido cargar el registro.",
     trash: (title) => `Mover a la papelera: ${title}`,
     restore: (title) => `Restaurar de la papelera: ${title}`,
-    emptyTrash: "¿Vaciar papelera y eliminar todas las tareas?",
+    emptyTrash: (count) =>
+      count === 1
+        ? "¿Vaciar la papelera y eliminar su tarea?"
+        : `¿Vaciar la papelera y eliminar sus ${count} tareas?`,
   },
   announcements: {
     added: (title) => `Tarea añadida: ${title}`,

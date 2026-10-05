@@ -33,7 +33,7 @@ Además de lo que pide el enunciado:
   de pantalla, contraste WCAG AA y respeto a la preferencia de *reducir movimiento*.
 - **Pestañas que aparecen cuando hacen falta**: Favoritas y Papelera quedan plegadas detrás de la
   pestaña anterior mientras están vacías, y se despliegan con su primera tarea.
-- **Tests**: 69 tests de backend (pytest) y 58 de frontend (Vitest + Testing Library).
+- **Tests**: 69 tests de backend (pytest) y 59 de frontend (Vitest + Testing Library).
 
 ## Puesta en marcha
 

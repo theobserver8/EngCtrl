@@ -283,7 +283,7 @@ describe("trash (task 2)", () => {
     });
     await user.click(screen.getByRole("tab", { name: /trash · 02/i }));
 
-    await user.click(screen.getByRole("button", { name: "Empty the trash and delete all its tasks?" }));
+    await user.click(screen.getByRole("button", { name: "Empty the trash and delete its 2 tasks?" }));
 
     await waitFor(() => expect(screen.queryByRole("tab", { name: /trash/i })).not.toBeInTheDocument());
     expect(api.mutations("DELETE")).toEqual([{ method: "DELETE", path: "/todos", query: "?ids=1&ids=3" }]);
@@ -294,12 +294,23 @@ describe("trash (task 2)", () => {
     expect(screen.getByRole("status")).toHaveTextContent("Trash emptied: 2 tasks deleted");
   });
 
+  it("says how many tasks emptying the trash deletes", async () => {
+    const { user } = await renderApp({
+      locale: "es",
+      todos: SEED_TODOS.map((todo) => ({ ...todo, trashed: todo.id === 3 })),
+    });
+
+    await user.click(screen.getByRole("tab", { name: /papelera · 01/i }));
+
+    expect(screen.getByRole("button", { name: "¿Vaciar la papelera y eliminar su tarea?" })).toBeInTheDocument();
+  });
+
   it("sends a single request on a double click", async () => {
     const { api, user } = await renderApp({
       todos: SEED_TODOS.map((todo) => ({ ...todo, trashed: todo.id !== 2 })),
     });
     await user.click(screen.getByRole("tab", { name: /trash · 02/i }));
-    const button = screen.getByRole("button", { name: "Empty the trash and delete all its tasks?" });
+    const button = screen.getByRole("button", { name: "Empty the trash and delete its 2 tasks?" });
 
     act(() => {
       button.click();
@@ -317,7 +328,7 @@ describe("trash (task 2)", () => {
     api.removeOnServer(1);
     await user.click(screen.getByRole("tab", { name: /trash · 02/i }));
 
-    await user.click(screen.getByRole("button", { name: "Empty the trash and delete all its tasks?" }));
+    await user.click(screen.getByRole("button", { name: "Empty the trash and delete its 2 tasks?" }));
 
     await waitFor(() => expect(screen.queryByRole("tab", { name: /trash/i })).not.toBeInTheDocument());
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
@@ -330,7 +341,7 @@ describe("trash (task 2)", () => {
     await user.click(screen.getByRole("tab", { name: /trash · 02/i }));
     api.state.offline = true;
 
-    await user.click(screen.getByRole("button", { name: "Empty the trash and delete all its tasks?" }));
+    await user.click(screen.getByRole("button", { name: "Empty the trash and delete its 2 tasks?" }));
 
     expect(await screen.findByRole("alert")).toBeInTheDocument();
     expect(await screen.findByRole("tab", { name: /trash · 02/i })).toBeInTheDocument();
