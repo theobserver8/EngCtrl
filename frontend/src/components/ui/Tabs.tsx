@@ -237,7 +237,6 @@ function Tabs<T extends string>({ label, tabs, selected, onSelect, aside, ref }:
               key={tab.id}
               tab={tab}
               stackOrder={tabs.length - index}
-              followsOutlinedTab={index > 0 && (tabs[index - 1].id === selected || !!tabs[index - 1].collapsed)}
               id={tabId(tab.id)}
               panelId={panelId(tab.id)}
               isSelected={tab.id === selected}
@@ -252,13 +251,14 @@ function Tabs<T extends string>({ label, tabs, selected, onSelect, aside, ref }:
         {aside && <div className="pb-3">{aside}</div>}
       </div>
 
-      {/* The corner under the first tab stays square so the tab flows into the frame. */}
+      {/* The corner under the first tab stays square: every tab is outlined, so its border always */}
+      {/* runs straight down into the frame's, selected or not. */}
       {/* Clipped: the inactive panels lie (invisible) on top of the active one and may be taller. */}
       {/* Layered above the collapsed tabs (their bottom edge must not hide its top border) and */}
       {/* below the selected one (z-10), which opens into it. */}
       <div
         ref={frameRef}
-        className={`relative z-5 overflow-clip rounded-control border border-line ${selectedIndex === 0 ? "rounded-tl-none" : ""}`}
+        className="relative z-5 overflow-clip rounded-control rounded-tl-none border border-line"
       >
         {tabs.map((tab) => {
           const isSelected = tab.id === selected;
@@ -295,8 +295,6 @@ interface TabButtonProps<T extends string> {
   isSelected: boolean;
   /** Higher for earlier tabs: a collapsed tab lies behind the ones before it. Below 5 (the frame). */
   stackOrder: number;
-  /** The tab before it is outlined (selected or collapsed): a collapsed tab's edge runs up to it. */
-  followsOutlinedTab: boolean;
   onSelect: (id: T) => void;
   buttonRef: (node: HTMLButtonElement | null) => void;
 }
@@ -313,7 +311,6 @@ function TabButton<T extends string>({
   panelId,
   isSelected,
   stackOrder,
-  followsOutlinedTab,
   onSelect,
   buttonRef,
 }: TabButtonProps<T>) {
@@ -351,7 +348,10 @@ function TabButton<T extends string>({
       ? // Shifted back by its own width: only its right edge shows, an outlined sliver, like a
         // sheet filed behind the previous tab.
         "translate-x-[calc(-100%+2px)] border-line bg-paper text-ink-faint"
-      : "border-transparent text-ink-faint hover:bg-brand-soft/60 hover:text-ink";
+      : // Outlined like every tab, so a tab collapsed behind it runs up to its border. Opaque, also
+        // on hover (brand-soft at 60% mixed over the sheet rather than see-through), so the
+        // collapsed tab behind it does not show through.
+        "border-line bg-sheet text-ink-faint hover:bg-[color-mix(in_srgb,var(--color-brand-soft)_60%,var(--color-sheet))] hover:text-ink";
 
   return (
     // Opens and closes its width (0 <-> the tab's measured width) while the tab slides back by its
@@ -359,18 +359,17 @@ function TabButton<T extends string>({
     // aligned to the start: its left edge never moves (it lines up with the frame) and a change of
     // width (e.g. another language) only moves its right edge. Clipped horizontally only, to its
     // padding box: the padding leaves room for the focus ring and the net-zero margins keep the
-    // spacing. Behind an outlined tab, the left padding reaches behind its rounded corner, so a
-    // collapsed tab's top edge runs on until it meets that tab's border (behind a tab with no
-    // outline that part would show as a loose block). Vertically it overflows freely
+    // spacing. The left padding reaches behind the previous tab's rounded corner, so a collapsed
+    // tab's top edge runs on until it meets that tab's border. Vertically it overflows freely
     // (the tab overlaps the frame's top border). Collapsed, it takes 2px more than nothing (a
     // smaller negative margin), so tabs stacked one behind another each show the same sliver.
     <div
       aria-hidden={collapsed || undefined}
       inert={collapsed}
       style={{ width: collapsed ? 0 : (width ?? undefined) }}
-      className={`box-content flex shrink-0 overflow-x-clip pr-1 transition-[width,margin-right,margin-left,padding-left] duration-(--motion-view) ease-in-out-soft ${
+      className={`-ml-3 box-content flex shrink-0 overflow-x-clip pr-1 pl-3 transition-[width,margin-right] duration-(--motion-view) ease-in-out-soft ${
         collapsed ? "-mr-0.5" : "-mr-1"
-      } ${followsOutlinedTab ? "-ml-3 pl-3" : "-ml-1 pl-1"}`}
+      }`}
     >
       <button
         ref={(node) => {
