@@ -150,6 +150,8 @@ function App() {
                   label: t.tasks.favoritesHeading,
                   count: loaded ? favorites.length : undefined,
                   signalChanges: true,
+                  // Tucked behind "Tasks" until there is a favourite to show.
+                  collapsed: favorites.length === 0,
                   icon: (
                     <StarIcon
                       className={`size-3.5 transition-[fill] duration-(--motion-base) ${

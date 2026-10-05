@@ -23,6 +23,12 @@ export interface TabItem<T extends string> {
   icon?: ReactNode;
   /** Signal on the tab itself when its count changes, so changes made from another tab are noticed. */
   signalChanges?: boolean;
+  /**
+   * Tucked behind the tab before it, only a sliver showing, and not selectable (e.g. a view with
+   * nothing to show yet). It slides out when this turns false and back in when it turns true.
+   * Never set on the first tab.
+   */
+  collapsed?: boolean;
   panel: ReactNode;
 }
 
@@ -103,6 +109,20 @@ function Tabs<T extends string>({ label, tabs, selected, onSelect, aside, ref }:
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected]);
 
+  // A selected tab that collapses hands the selection (and the focus, if it had it) to the first
+  // available one: a tucked-away tab cannot stay open. Before paint, so the frame still measures
+  // the outgoing view and the switch is animated as usual.
+  const selectedCollapsed = tabs[selectedIndex]?.collapsed ?? false;
+  useLayoutEffect(() => {
+    if (!selectedCollapsed) return;
+    const fallback = tabs.find((tab) => !tab.collapsed);
+    if (!fallback) return;
+    const hadFocus = document.activeElement === tabRefs.current.get(selected);
+    select(fallback.id);
+    if (hadFocus) tabRefs.current.get(fallback.id)?.focus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCollapsed]);
+
   useImperativeHandle(
     ref,
     () => ({ focusSelectedTab: () => tabRefs.current.get(selected)?.focus() }),
@@ -110,17 +130,20 @@ function Tabs<T extends string>({ label, tabs, selected, onSelect, aside, ref }:
   );
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    const last = tabs.length - 1;
+    // Collapsed tabs are skipped, as if they were not there.
+    const available = tabs.filter((tab) => !tab.collapsed);
+    const current = available.findIndex((tab) => tab.id === selected);
+    const last = available.length - 1;
     const targets: Partial<Record<string, number>> = {
-      ArrowRight: selectedIndex === last ? 0 : selectedIndex + 1,
-      ArrowLeft: selectedIndex === 0 ? last : selectedIndex - 1,
+      ArrowRight: current === last ? 0 : current + 1,
+      ArrowLeft: current <= 0 ? last : current - 1,
       Home: 0,
       End: last,
     };
     const next = targets[event.key];
     if (next === undefined) return;
     event.preventDefault();
-    const { id } = tabs[next];
+    const { id } = available[next];
     select(id);
     tabRefs.current.get(id)?.focus();
   };
@@ -197,7 +220,19 @@ interface CountChange {
 }
 
 function TabButton<T extends string>({ tab, id, panelId, isSelected, onSelect, buttonRef }: TabButtonProps<T>) {
-  const { count, signalChanges = false } = tab;
+  const { count, signalChanges = false, collapsed = false } = tab;
+  // Natural width of the tab, kept up to date (language, counter): its wrapper animates to it.
+  const ownRef = useRef<HTMLButtonElement>(null);
+  const [width, setWidth] = useState<number | null>(null);
+  useLayoutEffect(() => {
+    const node = ownRef.current;
+    if (!node) return;
+    setWidth(node.offsetWidth);
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() => setWidth(node.offsetWidth));
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
   // Derived during render (not in an effect) so the signal starts in the same frame as the change.
   const [previousCount, setPreviousCount] = useState(count);
   const [change, setChange] = useState<CountChange | null>(null);
@@ -209,58 +244,79 @@ function TabButton<T extends string>({ tab, id, panelId, isSelected, onSelect, b
     }
   }
 
+  const stateClasses = isSelected
+    ? "z-10 border-line bg-sheet text-ink"
+    : collapsed
+      ? // Only its right edge shows: an outlined sliver, like a sheet filed behind the previous tab.
+        "translate-x-0.5 border-line bg-paper text-ink-faint"
+      : "border-transparent text-ink-faint hover:bg-brand-soft/60 hover:text-ink";
+
   return (
-    <button
-      ref={buttonRef}
-      type="button"
-      role="tab"
-      id={id}
-      aria-selected={isSelected}
-      aria-controls={panelId}
-      tabIndex={isSelected ? 0 : -1}
-      onClick={() => onSelect(tab.id)}
-      // -mb-px: the selected tab covers the frame's top border, opening the folder into its panel.
-      className={`group focus-ring relative -mb-px flex h-10 cursor-pointer items-center rounded-t-control border border-b-0 px-3 font-mono text-[11px] font-medium tracking-[0.14em] whitespace-nowrap uppercase tabular-nums transition-colors duration-(--motion-gentle) ease-in-out-soft sm:px-4 ${
-        isSelected ? "z-10 border-line bg-sheet text-ink" : "border-transparent text-ink-faint hover:bg-brand-soft/60 hover:text-ink"
-      }`}
+    // Opens and closes its width (0 <-> the tab's measured width) with the tab aligned to its end,
+    // so a collapsed tab slides out from behind the previous one. Clipped horizontally only, to its
+    // padding box: the padding leaves room for the focus ring and the net-zero margins keep the
+    // spacing. Vertically it overflows freely (the tab overlaps the frame's top border).
+    <div
+      aria-hidden={collapsed || undefined}
+      inert={collapsed}
+      style={{ width: collapsed ? 0 : (width ?? undefined) }}
+      className="-mx-1 box-content flex justify-end overflow-x-clip px-1 transition-[width] duration-(--motion-view) ease-in-out-soft"
     >
-      {change && (
+      <button
+        ref={(node) => {
+          ownRef.current = node;
+          buttonRef(node);
+        }}
+        type="button"
+        role="tab"
+        id={id}
+        aria-selected={isSelected}
+        aria-controls={panelId}
+        tabIndex={isSelected ? 0 : -1}
+        onClick={() => {
+          if (!collapsed) onSelect(tab.id);
+        }}
+        // -mb-px: the selected tab covers the frame's top border, opening the folder into its panel.
+        className={`group focus-ring relative -mb-px flex h-10 cursor-pointer shrink-0 items-center rounded-t-control border border-b-0 px-3 font-mono text-[11px] font-medium tracking-[0.14em] whitespace-nowrap uppercase tabular-nums transition-[color,background-color,border-color,translate] duration-(--motion-gentle) ease-in-out-soft sm:px-4 ${stateClasses}`}
+      >
+        {change && (
+          <span
+            key={change.key}
+            aria-hidden="true"
+            className={`pointer-events-none absolute inset-0 rounded-t-control ${
+              change.direction === "up"
+                ? "animate-[signal-add_var(--motion-signal)_var(--ease-in-out-soft)]"
+                : "animate-[signal-remove_var(--motion-signal)_var(--ease-in-out-soft)]"
+            }`}
+          />
+        )}
         <span
-          key={change.key}
           aria-hidden="true"
-          className={`pointer-events-none absolute inset-0 rounded-t-control ${
-            change.direction === "up"
-              ? "animate-[signal-add_var(--motion-signal)_var(--ease-in-out-soft)]"
-              : "animate-[signal-remove_var(--motion-signal)_var(--ease-in-out-soft)]"
+          // On hover over an unselected tab it shows faintly and half-grown: a preview of the selection.
+          // It fades as it grows (and shrinks): a saturated line is noticed long before the pale
+          // background, so this keeps both in step. Tailwind's scale-* sets `scale`, not `transform`.
+          className={`absolute inset-x-3 -top-px h-0.5 rounded-full bg-brand transition-[scale,opacity] duration-(--motion-gentle) ease-in-out-soft ${
+            isSelected ? "scale-x-100" : "scale-x-0 opacity-0 group-hover:scale-x-50 group-hover:opacity-40"
           }`}
         />
-      )}
-      <span
-        aria-hidden="true"
-        // On hover over an unselected tab it shows faintly and half-grown: a preview of the selection.
-        // It fades as it grows (and shrinks): a saturated line is noticed long before the pale
-        // background, so this keeps both in step. Tailwind's scale-* sets `scale`, not `transform`.
-        className={`absolute inset-x-3 -top-px h-0.5 rounded-full bg-brand transition-[scale,opacity] duration-(--motion-gentle) ease-in-out-soft ${
-          isSelected ? "scale-x-100" : "scale-x-0 opacity-0 group-hover:scale-x-50 group-hover:opacity-40"
-        }`}
-      />
-      <span className="relative flex items-center gap-2">
-        {tab.icon}
-        {tab.label}
-        {count === undefined ? (
-          // Reserves the counter's width while loading, so the tabs do not shift when it arrives.
-          <span aria-hidden="true" className="opacity-0">
-            ·&nbsp;00
-          </span>
-        ) : (
-          // The space is ignored by the flex layout (gap spaces it) but keeps the accessible name readable.
-          <span className="flex overflow-hidden motion-safe:animate-[fade-in_var(--motion-base)_var(--ease-out-soft)]">
-            {" "}·&nbsp;
-            <RollingNumber value={count} format={formatCount} />
-          </span>
-        )}
-      </span>
-    </button>
+        <span className="relative flex items-center gap-2">
+          {tab.icon}
+          {tab.label}
+          {count === undefined ? (
+            // Reserves the counter's width while loading, so the tabs do not shift when it arrives.
+            <span aria-hidden="true" className="opacity-0">
+              ·&nbsp;00
+            </span>
+          ) : (
+            // The space is ignored by the flex layout (gap spaces it) but keeps the accessible name readable.
+            <span className="flex overflow-hidden motion-safe:animate-[fade-in_var(--motion-base)_var(--ease-out-soft)]">
+              {" "}·&nbsp;
+              <RollingNumber value={count} format={formatCount} />
+            </span>
+          )}
+        </span>
+      </button>
+    </div>
   );
 }
 
