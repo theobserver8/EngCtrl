@@ -33,6 +33,27 @@ class TestCrud:
             repository.delete(99)
         assert data_file.read_text(encoding="utf-8") == before
 
+    def test_delete_many_writes_once_and_ignores_unknown_ids(
+        self, repository: JsonTodoRepository, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        saves = []
+        save = repository._save
+        monkeypatch.setattr(repository, "_save", lambda store: (saves.append(store), save(store)))
+
+        repository.delete_many({1, 2, 99})
+
+        assert repository.list_all() == []
+        assert len(saves) == 1
+
+    def test_delete_many_with_only_unknown_ids_leaves_the_file_untouched(
+        self, repository: JsonTodoRepository, data_file: Path
+    ) -> None:
+        before = data_file.read_text(encoding="utf-8")
+
+        repository.delete_many({98, 99})
+
+        assert data_file.read_text(encoding="utf-8") == before
+
     def test_ids_are_not_reused_after_deleting_the_last_one(self, repository: JsonTodoRepository) -> None:
         repository.delete(2)
 

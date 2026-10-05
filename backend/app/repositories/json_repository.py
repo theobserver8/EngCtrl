@@ -2,6 +2,7 @@ import json
 import os
 import tempfile
 import threading
+from collections.abc import Collection
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -63,6 +64,14 @@ class JsonTodoRepository(TodoRepository):
             store = self._load()
             del store.todos[self._index_of(store.todos, todo_id)]
             self._save(store)
+
+    def delete_many(self, todo_ids: Collection[int]) -> None:
+        with self._lock:
+            store = self._load()
+            remaining = [todo for todo in store.todos if todo.id not in todo_ids]
+            if len(remaining) != len(store.todos):  # Nothing to write if none existed.
+                store.todos = remaining
+                self._save(store)
 
     @staticmethod
     def _index_of(todos: list[Todo], todo_id: int) -> int:

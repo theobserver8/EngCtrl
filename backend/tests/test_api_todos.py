@@ -185,6 +185,39 @@ class TestDeleteTodo:
         assert client.patch("/todos/1", json={"completed": True}).status_code == 404
 
 
+class TestDeleteTodos:
+    def test_deletes_every_given_todo_in_one_request(self, client: TestClient, data_file: Path) -> None:
+        client.post("/todos", json={"title": "Kept"})
+
+        response = client.delete("/todos", params={"ids": [1, 2]})
+
+        assert response.status_code == 204
+        assert response.content == b""
+        assert [todo["title"] for todo in read_file(data_file)["todos"]] == ["Kept"]
+
+    def test_ignores_ids_already_deleted(self, client: TestClient, data_file: Path) -> None:
+        client.delete("/todos/1")
+
+        assert client.delete("/todos", params={"ids": [1, 2, 999]}).status_code == 204
+        assert read_file(data_file)["todos"] == []
+
+    def test_deleted_ids_are_never_reused(self, client: TestClient) -> None:
+        client.delete("/todos", params={"ids": [1, 2]})
+
+        assert client.post("/todos", json={"title": "New"}).json()["id"] == 3
+
+    @pytest.mark.parametrize(
+        "query",
+        ["", "?ids=", "?ids=0", "?ids=1&ids=-1", "?ids=abc", "?" + "&".join(["ids=1"] * 1001)],
+        ids=["missing", "empty", "zero", "negative", "not-a-number", "too-many"],
+    )
+    def test_rejects_invalid_ids(self, client: TestClient, query: str, data_file: Path) -> None:
+        before = data_file.read_text(encoding="utf-8")
+
+        assert client.delete(f"/todos{query}").status_code == 422
+        assert data_file.read_text(encoding="utf-8") == before
+
+
 class TestErrorsAndCors:
     def test_corrupt_storage_returns_500_with_clear_message(self, write_data) -> None:
         client = TestClient(create_app(Settings(data_file=write_data("{not json"))))
