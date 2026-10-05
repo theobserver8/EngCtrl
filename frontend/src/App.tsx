@@ -28,7 +28,8 @@ function App() {
     addTodo,
     toggleTodo,
     toggleFavorite,
-    deleteTodo,
+    trashTodo,
+    restoreTodo,
     clearError,
   } = useTodos();
   // Polite live region so screen reader users hear the outcome of their actions.
@@ -66,21 +67,31 @@ function App() {
     }
   };
 
-  const handleDelete = async (todo: Todo) => {
-    if (await deleteTodo(todo))
-      setAnnouncement(t.announcements.deleted(todo.title));
+  const handleTrash = async (todo: Todo) => {
+    if (await trashTodo(todo)) setAnnouncement(t.announcements.trashed(todo.title));
+  };
+
+  const handleRestore = async (todo: Todo) => {
+    // Restored from the trash view, the row closes and would take the focus with it (see above).
+    if (view === "trash") tabsRef.current?.focusSelectedTab();
+    if (await restoreTodo(todo)) setAnnouncement(t.announcements.restored(todo.title));
   };
 
   const listProps = {
     pendingIds,
     onToggle: toggleTodo,
     onToggleFavorite: handleToggleFavorite,
-    onDelete: handleDelete,
+    onTrash: handleTrash,
+    onRestore: handleRestore,
     animateNewRows,
   };
 
   /** Content of a view's panel: the first load, a failed load, the list or its empty state. */
-  const renderPanel = (list: Todo[], empty?: ReactNode, leaveOnUnfavorite = false) => {
+  const renderPanel = (
+    list: Todo[],
+    empty?: ReactNode,
+    variant?: { leaveOnUnfavorite?: boolean; inTrashView?: boolean },
+  ) => {
     if (status === "loading") return <TodoListSkeleton label={t.tasks.loading} />;
     if (loadFailed)
       return (
@@ -89,7 +100,7 @@ function App() {
         </p>
       );
     return list.length > 0 ? (
-      <TodoList todos={list} leaveOnUnfavorite={leaveOnUnfavorite} {...listProps} />
+      <TodoList todos={list} {...variant} {...listProps} />
     ) : (
       empty
     );
@@ -161,7 +172,7 @@ function App() {
                     />
                   ),
                   // No empty state: without favourites the tab is tucked away and cannot be opened.
-                  panel: renderPanel(favorites, undefined, true),
+                  panel: renderPanel(favorites, undefined, { leaveOnUnfavorite: true }),
                 },
                 {
                   id: "trash",
@@ -171,7 +182,7 @@ function App() {
                   // Last, tucked behind the others until something is moved to the trash.
                   collapsed: trashed.length === 0,
                   icon: <TrashIcon className="size-3.5" />,
-                  panel: renderPanel(trashed),
+                  panel: renderPanel(trashed, undefined, { inTrashView: true }),
                 },
               ]}
             />

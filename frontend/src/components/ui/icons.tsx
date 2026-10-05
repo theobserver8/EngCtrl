@@ -63,6 +63,15 @@ export function TrashIcon(props: IconProps) {
   );
 }
 
+export function RestoreIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M5.5 3.5l-2.5 2.5 2.5 2.5" />
+      <path d="M3 6h6.25a3.5 3.5 0 0 1 0 7H6" />
+    </Icon>
+  );
+}
+
 export function AlertIcon(props: IconProps) {
   return (
     <Icon {...props}>

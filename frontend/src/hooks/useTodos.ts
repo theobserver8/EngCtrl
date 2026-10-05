@@ -27,8 +27,6 @@ export interface UseTodosResult {
   restoreTodo: (todo: Todo) => Promise<boolean>;
   /** Deletes every todo in the trash with a single request. Resolves to true once they are gone. */
   emptyTrash: () => Promise<boolean>;
-  /** Resolves to true when the todo is gone from the server. */
-  deleteTodo: (todo: Todo) => Promise<boolean>;
   clearError: () => void;
 }
 
@@ -200,30 +198,6 @@ export function useTodos(): UseTodosResult {
     return deleted;
   }, [todos, runAction]);
 
-  const deleteTodo = useCallback(
-    async (todo: Todo) => {
-      // Optimistic removal. Server order is id order (ids only grow), so a rollback can
-      // put the todo back in its place by sorting.
-      setTodos((prev) => prev.filter((t) => t.id !== todo.id));
-      const deleted = await runAction(async () => {
-        try {
-          await todosApi.remove(todo.id);
-        } catch (err) {
-          // Already deleted (e.g. from another tab): the intent is fulfilled, not an error.
-          if (err instanceof ApiError && err.status === 404) return;
-          throw err;
-        }
-      });
-      if (!deleted) {
-        setTodos((prev) =>
-          prev.some((t) => t.id === todo.id) ? prev : [...prev, todo].sort((a, b) => a.id - b.id),
-        );
-      }
-      return deleted;
-    },
-    [runAction],
-  );
-
   const clearError = useCallback(() => {
     setActionError(null);
     setLoadError(null);
@@ -243,7 +217,6 @@ export function useTodos(): UseTodosResult {
     trashTodo,
     restoreTodo,
     emptyTrash,
-    deleteTodo,
     clearError,
   };
 }
