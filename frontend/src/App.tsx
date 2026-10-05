@@ -7,7 +7,7 @@ import TodoListSkeleton from "./components/todo/TodoListSkeleton";
 import EmptyState from "./components/ui/EmptyState";
 import ErrorBanner from "./components/ui/ErrorBanner";
 import Button from "./components/ui/Button";
-import { StarIcon, TrashIcon } from "./components/ui/icons";
+import { ChecklistIcon, StarIcon, TrashIcon } from "./components/ui/icons";
 import Tabs, { type TabsHandle } from "./components/ui/Tabs";
 import { useTodos } from "./hooks/useTodos";
 import { useI18n } from "./i18n/useI18n";
@@ -183,6 +183,7 @@ function App() {
                 {
                   id: "all",
                   label: t.tasks.heading,
+                  icon: <ChecklistIcon className="size-3.5" />,
                   count: loaded ? todos.length : undefined,
                   panel: renderPanel(todos, <EmptyState message={t.tasks.empty} />),
                 },
