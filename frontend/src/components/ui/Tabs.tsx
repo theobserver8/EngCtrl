@@ -20,6 +20,13 @@ const EASE_IN_OUT_SOFT = "cubic-bezier(0.65, 0, 0.35, 1)";
 const TAB_TRANSITION =
   "[transition:color_var(--motion-gentle)_var(--ease-in-out-soft),background-color_var(--motion-gentle)_var(--ease-in-out-soft),border-color_var(--motion-gentle)_var(--ease-in-out-soft),translate_var(--motion-view)_var(--ease-in-out-soft)]";
 
+// Solid wash and its starting opacity per tone: each one pale enough for the label to stay legible.
+const SIGNAL_TONE_CLASSES = {
+  lime: "bg-lime [--signal-strength:0.6]",
+  brand: "bg-brand [--signal-strength:0.3]",
+  danger: "bg-danger [--signal-strength:0.5]",
+} as const;
+
 export interface TabItem<T extends string> {
   id: T;
   label: string;
@@ -27,9 +34,10 @@ export interface TabItem<T extends string> {
   count?: number;
   icon?: ReactNode;
   /** Signal on the tab itself when its count changes, so changes made from another tab are noticed. */
-  signalChanges?: boolean;
-  /** Colour of the signal when the count goes up (default lime; danger for e.g. the trash). */
-  signalTone?: "lime" | "danger";
+  /** `"up"`: only when it goes up (e.g. a count that also drops on routine clean-ups). */
+  signalChanges?: boolean | "up";
+  /** Colour of the signal when the count goes up (default lime; brand or danger for other views). */
+  signalTone?: "lime" | "brand" | "danger";
   /**
    * Tucked behind the tab before it, only a sliver showing, and not selectable (e.g. a view with
    * nothing to show yet). It slides out when this turns false and back in when it turns true.
@@ -344,7 +352,10 @@ function TabButton<T extends string>({
     setPreviousCount(count);
     // The first count (end of the initial load) is not a change worth signalling.
     if (signalChanges && count !== undefined && previousCount !== undefined) {
-      setChange({ key: (change?.key ?? 0) + 1, direction: count > previousCount ? "up" : "down" });
+      const direction = count > previousCount ? "up" : "down";
+      if (signalChanges !== "up" || direction === "up") {
+        setChange({ key: (change?.key ?? 0) + 1, direction });
+      }
     }
   }
 
@@ -403,9 +414,7 @@ function TabButton<T extends string>({
             className={`pointer-events-none absolute inset-0 rounded-t-control opacity-0 animate-[signal-fade_var(--motion-signal)_var(--ease-in-out-soft)] ${
               change.direction === "down"
                 ? "bg-line"
-                : signalTone === "danger"
-                  ? "bg-danger [--signal-strength:0.5]"
-                  : "bg-lime [--signal-strength:0.6]"
+                : SIGNAL_TONE_CLASSES[signalTone]
             }`}
           />
         )}

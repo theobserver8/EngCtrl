@@ -185,6 +185,9 @@ function App() {
                   label: t.tasks.heading,
                   icon: <ChecklistIcon className="size-3.5" />,
                   count: loaded ? todos.length : undefined,
+                  // Only new tasks: emptying the trash would wash it grey every time.
+                  signalChanges: "up",
+                  signalTone: "brand",
                   panel: renderPanel(todos, <EmptyState message={t.tasks.empty} />),
                 },
                 {
